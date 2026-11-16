@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LIB-TEACHER | 학교도서관 장서 제적 판별 및 출처 생성기</title>
+  
+  <!-- Editorial Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  
+  <!-- SheetJS for CSV & Excel Parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg-paper: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --bg-subtle: #F2EFE9;
+      --text-ink: #1C1B19;
+      --text-muted: #5C5852;
+      --accent-orange: #D44A1C;
+      --accent-orange-hover: #B33B12;
+      --accent-orange-soft: #FDF2EE;
+      --border-line: #D8D2C7;
+      --border-strong: #1C1B19;
+      --status-warn: #B83214;
+      --status-ok: #265C42;
+      --font-serif: 'Noto Serif KR', Georgia, serif;
+      --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-paper);
+      color: var(--text-ink);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    /* Editorial Masthead */
+    header.masthead {
+      border-bottom: 2px solid var(--border-strong);
+      padding-bottom: 28px;
+      margin-bottom: 36px;
+    }
+
+    .masthead-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8125rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .masthead-meta span.tag {
+      color: var(--accent-orange);
+    }
+
+    h1.site-title {
+      font-family: var(--font-serif);
+      font-size: 2.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      margin-bottom: 10px;
+    }
+
+    p.site-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 760px;
+    }
+
+    /* Mode Navigation Tabs */
+    nav.mode-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border-line);
+      margin-bottom: 40px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 14px 24px;
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-ink);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-orange);
+      border-bottom-color: var(--accent-orange);
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    /* Editorial Section Structure */
+    .section-block {
+      margin-bottom: 44px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border-line);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .section-note {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Cards & Controls */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      padding: 28px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 860px) {
+      .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Form Elements */
+    label.field-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-ink);
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-line);
+      background: var(--bg-paper);
+      color: var(--text-ink);
+      font-family: var(--font-sans);
+      font-size: 0.9375rem;
+      transition: border-color 0.15s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-orange);
+      background: #FFFFFF;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      accent-color: var(--accent-orange);
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-card);
+      color: var(--text-ink);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: var(--bg-subtle);
+    }
+
+    .btn-primary {
+      background: var(--accent-orange);
+      border-color: var(--accent-orange);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-orange-hover);
+      border-color: var(--accent-orange-hover);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.825rem;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      border: 1.5px dashed var(--border-line);
+      background: var(--bg-paper);
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent-orange);
+      background: var(--accent-orange-soft);
+    }
+
+    .dropzone-title {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .dropzone-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Validation Log Box */
+    .log-box {
+      margin-top: 16px;
+      padding: 14px 16px;
+      background: var(--bg-subtle);
+      border-left: 3px solid var(--text-muted);
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .log-box.has-warn {
+      border-left-color: var(--accent-orange);
+      background: var(--accent-orange-soft);
+    }
+
+    .log-box ul {
+      margin-left: 18px;
+      margin-top: 6px;
+    }
+
+    /* KPI Summary Strip */
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      padding: 20px;
+    }
+
+    .kpi-label {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-family: var(--font-serif);
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .kpi-sub {
+      font-size: 0.8rem;
+      margin-top: 4px;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid currentColor;
+    }
+
+    .badge-warn {
+      color: var(--status-warn);
+      background: var(--accent-orange-soft);
+    }
+
+    .badge-ok {
+      color: var(--status-ok);
+      background: #EDF5F0;
+    }
+
+    /* Legal Gauge Bar */
+    .gauge-wrap {
+      margin-top: 12px;
+      background: var(--bg-subtle);
+      height: 8px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gauge-fill {
+      height: 100%;
+      background: var(--status-ok);
+      width: 0%;
+      transition: width 0.3s ease, background 0.3s ease;
+    }
+
+    .gauge-fill.over {
+      background: var(--accent-orange);
+    }
+
+    /* Data Table */
+    .table-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--border-line);
+      background: var(--bg-card);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg-subtle);
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-strong);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border-line);
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: #FAF8F5;
+    }
+
+    .reason-pill {
+      display: inline-block;
+      font-size: 0.78rem;
+      padding: 2px 7px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-line);
+      margin-right: 4px;
+      margin-bottom: 2px;
+    }
+
+    .reason-pill.primary {
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+      background: var(--accent-orange-soft);
+      font-weight: 600;
+    }
+
+    /* Citation Output Box */
+    .citation-preview {
+      background: var(--bg-paper);
+      border: 1px solid var(--border-strong);
+      padding: 20px;
+      font-family: var(--font-serif);
+      font-size: 1.02rem;
+      line-height: 1.75;
+      min-height: 76px;
+      margin-top: 12px;
+      word-break: keep-all;
+    }
+
+    .bib-list {
+      list-style: none;
+      border-top: 1px solid var(--border-line);
+    }
+
+    .bib-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border-line);
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
+    }
+
+    .bib-item-text {
+      padding-left: 2em;
+      text-indent: -2em;
+    }
+
+    .status-banner {
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      background: var(--bg-subtle);
+      border-left: 3px solid var(--accent-orange);
+      margin-top: 12px;
+      display: none;
+    }
+
+    footer.editorial-footer {
+      margin-top: 72px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-line);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Masthead -->
+  <header class="masthead">
+    <div class="masthead-meta">
+      <span>LIB-TEACHER WORKBENCH // V1.0</span>
+      <span class="tag">SCHOOL LIBRARY ADMINISTRATION &amp; INFORMATION LITERACY</span>
+    </div>
+    <h1 class="site-title">학교도서관 장서 제적 판별 및 출처 생성기</h1>
+    <p class="site-subtitle">
+      도서관법 시행령(연간 제적·폐기 7% 상한)과 한국도서관협회(KLA) 학교도서관 기준에 근거한 장서 폐기 의사결정 지원 및 정보활용교육용 표준 참고문헌 자동 생성 도구입니다.
+    </p>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="mode-tabs" role="tablist">
+    <button class="tab-btn active" data-target="panel-weeding" role="tab" aria-selected="true">
+      01. 장서 제적(폐기) 판별 및 사유서 생성
+    </button>
+    <button class="tab-btn" data-target="panel-citation" role="tab" aria-selected="false">
+      02. 수업·탐구용 자동 출처 생성기
+    </button>
+  </nav>
+
+  <!-- ===================================================================== -->
+  <!-- PANEL 1: 장서 제적(폐기) 판별 및 사유서 생성                                  -->
+  <!-- ===================================================================== -->
+  <section id="panel-weeding" class="panel active">
+    
+    <!-- Step 1: Data Upload -->
+    <div class="section-block">
+      <div class="section-header">
+        <h2 class="section-title">1단계. 장서 및 대출 통계 데이터 불러오기</h2>
+        <span class="section-note">지원 형식: CSV, XLSX, XLS (DLS 반출 파일 호환)</span>
+      </div>
+
+      <div class="card">
+        <div id="dropzone" class="dropzone" tabindex="0">
+          <div class="dropzone-title">장서·대출 통계 파일을 이곳에 끌어다 놓거나 클릭하여 선택하십시오</div>
+          <div class="dropzone-desc">필수 인식 열: 도서명(서명), 저자, 출판사, 출판연도, 분류기호(KDC), 대출횟수, 상태</div>
+          <input type="file" id="file-input" accept=".csv,.xlsx,.xls" hidden />
+        </div>
+
+        <div class="btn-group">
+          <button type="button" class="btn btn-primary" id="btn-load-sample">
+            시연용 샘플 데이터 불러오기 (정상 + 오류 데이터 포함)
+          </button>
+          <button type="button" class="btn" id="btn-download-template">
+            표준 CSV 입력 양식 다운로드
+          </button>
+        </div>
+
+        <div id="validation-log" class="log-box">
+          <strong id="validation-summary">데이터 검증 결과</strong>
+          <ul id="validation-details"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Criteria Settings -->
+    <div class="section-block">
+      <div class="section-header">
+        <h2 class="section-title">2단계. 법령 및 KLA 폐기 판별 기준 설정</h2>
+        <span class="section-note">도서관법 시행령 제적·폐기 상한(전체 장서의 7%) 자동 대조</span>
+      </div>
+
+      <div class="card">
+        <div class="grid-4">
+          <div>
+            <label class="field-label" for="crit-base-year">기준 연도</label>
+            <input type="number" id="crit-base-year" value="2026" min="2000" max="2035" />
+          </div>
+          <div>
+            <label class="field-label" for="crit-age">노후 경과 연수 (년 이상)</label>
+            <input type="number" id="crit-age" value="10" min="1" max="50" />
+          </div>
+          <div>
+            <label class="field-label" for="crit-loans">최대 누적 대출 횟수 (회 이하)</label>
+            <input type="number" id="crit-loans" value="1" min="0" max="100" />
+          </div>
+          <div>
+            <label class="field-label" for="crit-copies">복본 초과 기준 (권 이상)</label>
+            <input type="number" id="crit-copies" value="2" min="2" max="20" />
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 12px;">
+          <div>
+            <label class="checkbox-row">
+              <input type="checkbox" id="crit-damaged" checked />
+              <span>오훼손·파손·분실 상태 도서 우선 폐기 추천에 포함</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="crit-protect-ref" checked />
+              <span>참고도서(KDC 000번대 총류 및 사전류) 자동 제외 보호</span>
+            </label>
+          </div>
+          <div>
+            <label class="field-label" for="crit-total-collection">학교 전체 보유 장서 수 (법정 7% 상한 계산용)</label>
+            <input type="number" id="crit-total-collection" placeholder="미입력 시 업로드된 파일 전체 권수로 계산" min="1" />
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button type="button" class="btn btn-primary" id="btn-run-analysis">
+            설정 기준으로 폐기 대상 재분석 실행
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Results & Export -->
+    <div class="section-block" id="weeding-results-section" style="display: none;">
+      <div class="section-header">
+        <h2 class="section-title">3단계. 제적 추천 분석 결과 및 사유서 내보내기</h2>
+        <span class="section-note" id="analysis-timestamp"></span>
+      </div>
+
+      <!-- KPI Strip -->
+      <div class="grid-3" style="margin-bottom: 24px;">
+        <div class="kpi-card">
+          <div class="kpi-label">전체 기준 장서 / 분석 대상</div>
+          <div class="kpi-value" id="kpi-total">0권</div>
+          <div class="kpi-sub" id="kpi-parsed-sub">업로드 유효 데이터 0건</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">폐기 추천 도서 (체크 선택됨)</div>
+          <div class="kpi-value" id="kpi-recommended">0권</div>
+          <div class="kpi-sub" id="kpi-selected-sub">최종 내보내기 선택: 0권</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">예상 제적·폐기율 (법정 상한 7.0%)</div>
+          <div class="kpi-value" id="kpi-rate">0.0%</div>
+          <div class="gauge-wrap">
+            <div class="gauge-fill" id="kpi-gauge"></div>
+          </div>
+          <div class="kpi-sub" id="kpi-legal-status" style="margin-top: 6px;"></div>
+        </div>
+      </div>
+
+      <!-- Filter & Export Controls -->
+      <div class="table-controls">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <select id="filter-kdc" style="width: auto;">
+            <option value="ALL">전체 KDC 분류</option>
+            <option value="0">000 총류</option>
+            <option value="1">100 철학</option>
+            <option value="2">200 종교</option>
+            <option value="3">300 사회과학</option>
+            <option value="4">400 자연과학</option>
+            <option value="5">500 기술과학</option>
+            <option value="6">600 예술</option>
+            <option value="7">700 언어</option>
+            <option value="8">800 문학</option>
+            <option value="9">900 역사</option>
+          </select>
+          <select id="filter-status" style="width: auto;">
+            <option value="RECOMMENDED">폐기 추천 도서만 보기</option>
+            <option value="ALL">전체 도서 보기</option>
+          </select>
+          <input type="text" id="filter-keyword" placeholder="도서명 또는 저자 검색..." style="width: 220px;" />
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-sm" id="btn-toggle-all">추천 도서 전체 선택/해제</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-export-csv">
+            선택 도서 제적 사유서 CSV 다운로드
+          </button>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 42px;"><input type="checkbox" id="check-all-rows" checked /></th>
+              <th>등록번호</th>
+              <th>KDC</th>
+              <th>도서명</th>
+              <th>저자 / 출판사</th>
+              <th>출판연도</th>
+              <th>누적대출</th>
+              <th>보존상태</th>
+              <th>판별 결과 및 자동 제적 사유</th>
+            </tr>
+          </thead>
+          <tbody id="weeding-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- PANEL 2: 수업·탐구용 자동 출처 생성기                                      -->
+  <!-- ===================================================================== -->
+  <section id="panel-citation" class="panel">
+    <div class="section-block">
+      <div class="section-header">
+        <h2 class="section-title">1단계. 자료 유형 선택 및 서지 메타데이터 조회</h2>
+        <span class="section-note">Google Books API · Crossref DOI API 실시간 연동</span>
+      </div>
+
+      <div class="card">
+        <div class="grid-2" style="margin-bottom: 16px;">
+          <div>
+            <label class="field-label" for="cite-type">자료 유형</label>
+            <select id="cite-type">
+              <option value="book">단행본 (도서명 또는 ISBN 검색)</option>
+              <option value="journal">학술논문 (DOI 번호 또는 논문 제목 검색)</option>
+              <option value="web">웹페이지 / 온라인 기사 (URL 입력 후 상세 보완)</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="cite-style">인용 표기 양식</label>
+            <select id="cite-style">
+              <option value="klis">한국문헌정보학회지 양식 (국내 문헌정보 표준)</option>
+              <option value="apa">APA 7판 양식 (사회과학·교육학 표준)</option>
+              <option value="mla">MLA 9판 양식 (인문·독서감상문 표준)</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="field-label" for="cite-query" id="cite-query-label">도서명 또는 ISBN 입력</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="cite-query" placeholder="예: 학교도서관 운영의 실제 또는 9788976781857" />
+          <button type="button" class="btn btn-primary" id="btn-fetch-meta" style="white-space: nowrap;">
+            메타데이터 조회
+          </button>
+        </div>
+
+        <div id="cite-status" class="status-banner"></div>
+
+        <!-- Editable Metadata Fields -->
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-line);">
+          <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 12px; color: var(--text-muted);">
+            서지 상세 정보 (자동 조회된 내용을 확인하거나 누락된 항목을 직접 수정할 수 있습니다)
+          </div>
+          <div class="grid-3">
+            <div>
+              <label class="field-label" for="meta-author">저자 / 작성자 (복수 시 쉼표 구분)</label>
+              <input type="text" id="meta-author" placeholder="예: 홍길동, 김철수" />
+            </div>
+            <div>
+              <label class="field-label" for="meta-year">발행연도</label>
+              <input type="text" id="meta-year" placeholder="예: 2025" />
+            </div>
+            <div>
+              <label class="field-label" for="meta-title">자료명 (도서명 / 논문명 / 웹문서 제목)</label>
+              <input type="text" id="meta-title" placeholder="자료 제목 입력" />
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-top: 14px;">
+            <div>
+              <label class="field-label" for="meta-publisher" id="meta-pub-label">출판사 / 학술지명 / 웹사이트명</label>
+              <input type="text" id="meta-publisher" placeholder="예: 한국도서관협회" />
+            </div>
+            <div>
+              <label class="field-label" for="meta-detail" id="meta-detail-label">발행지 / 권(호)·페이지</label>
+              <input type="text" id="meta-detail" placeholder="예: 서울 또는 56(2), 45-68" />
+            </div>
+            <div>
+              <label class="field-label" for="meta-url">URL 또는 DOI</label>
+              <input type="text" id="meta-url" placeholder="https://..." />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Generated Citation & Bibliography Builder -->
+    <div class="section-block">
+      <div class="section-header">
+        <h2 class="section-title">2단계. 생성된 출처 확인 및 참고문헌 목록 누적</h2>
+        <span class="section-note">수업 활동지 및 탐구보고서 예시 배포용</span>
+      </div>
+
+      <div class="card">
+        <label class="field-label">실시간 변환 결과</label>
+        <div id="citation-output" class="citation-preview">
+          위에서 자료 정보를 조회하거나 직접 입력하면 선택한 양식의 참고문헌 문장이 자동 생성됩니다.
+        </div>
+
+        <div class="btn-group">
+          <button type="button" class="btn btn-primary" id="btn-copy-single">현재 출처 복사하기</button>
+          <button type="button" class="btn" id="btn-add-bib">아래 참고문헌 목록에 추가</button>
+        </div>
+
+        <div style="margin-top: 32px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <strong style="font-size: 0.95rem;">누적 참고문헌 목록 (<span id="bib-count">0</span>건)</strong>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-sm" id="btn-sort-bib">가나다/ABC 순 정렬</button>
+              <button type="button" class="btn btn-sm" id="btn-copy-all-bib">전체 일괄 복사</button>
+              <button type="button" class="btn btn-sm" id="btn-clear-bib">목록 비우기</button>
+            </div>
+          </div>
+          <ul id="bib-list" class="bib-list">
+            <li style="padding: 16px 0; color: var(--text-muted); font-size: 0.875rem;">
+              아직 추가된 참고문헌이 없습니다.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="editorial-footer">
+    <span>LIB-TEACHER // 사서교사 업무 및 정보활용교육 지원 웹 애플리케이션</span>
+    <span>법령 기준 참고: 도서관법 시행령(장서의 교환·이관·폐기 및 제적 기준) · KLA 학교도서관 기준</span>
+  </footer>
+</div>
+
+<script>
+  /* =========================================================================
+   * 0. TAB NAVIGATION
+   * ========================================================================= */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+
+  /* =========================================================================
+   * 1. COLLECTION WEEDING ANALYZER (장서 제적 판별기)
+   * ========================================================================= */
+  let rawBooks = [];
+  let analyzedBooks = [];
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  });
+  fileInput.addEventListener('change', e => {
+    if (e.target.files.length > 0) {
+      handleFileUpload(e.target.files[0]);
+    }
+  });
+
+  function handleFileUpload(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+        
+        if (!jsonRows || jsonRows.length === 0) {
+          showValidationLog(['파일에 유효한 데이터 행이 존재하지 않습니다.'], true);
+          return;
+        }
+        ingestRows(jsonRows, file.name);
+      } catch (err) {
+        showValidationLog([`파일 파싱 오류: 올바른 CSV 또는 Excel 파일인지 확인하십시오. (${err.message})`], true);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // 시연용 샘플 데이터 (정상 데이터 15건 + 예상 밖 이상치 데이터 3건 포함)
+  document.getElementById('btn-load-sample').addEventListener('click', () => {
+    const sampleData = [
+      { 등록번호: 'EM00101', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00102', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 1, 상태: '정상' },
+      { 등록번호: 'EM00103', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 0, 상태: '오훼손' },
+      { 등록번호: 'EM00104', 분류기호: '400', 도서명: '청소년을 위한 최신 과학상식 2010', 저자: '과학편집부', 출판사: '미래출판', 출판연도: 2010, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00105', 분류기호: '031', 도서명: '표준국어대사전 개정판', 저자: '국립국어원', 출판사: '두산동아', 출판연도: 2008, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00106', 분류기호: '320', 도서명: '쉽게 읽는 헌법과 민주주의', 저자: '박정훈', 출판사: '사회평론', 출판연도: 2024, 대출횟수: 14, 상태: '정상' },
+      { 등록번호: 'EM00107', 분류기호: '550', 도서명: '윈도우 XP 활용 완전정복', 저자: '김컴퓨터', 출판사: '한빛미디어', 출판연도: 2005, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00108', 분류기호: '911', 도서명: '한국사 핵심 사료집', 저자: '이역사', 출판사: '역사비평사', 출판연도: 2013, 대출횟수: 1, 상태: '파손' },
+      { 등록번호: 'EM00109', 분류기호: '843', 도서명: '앵무새 죽이기', 저자: '하퍼 리', 출판사: '열린책들', 출판연도: 2022, 대출횟수: 23, 상태: '정상' },
+      { 등록번호: 'EM00110', 분류기호: '100', 도서명: '서양 철학사 산책', 저자: '최철학', 출판사: '철학과현실사', 출판연도: 2014, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00111', 분류기호: '740', 도서명: '기초 영문법 3300제 (2012년판)', 저자: '영어연구회', 출판사: '능률교육', 출판연도: 2012, 대출횟수: 1, 상태: '정상' },
+      { 등록번호: 'EM00112', 분류기호: '600', 도서명: '현대 미술의 이해', 저자: '정예술', 출판사: '미진사', 출판연도: 2023, 대출횟수: 8, 상태: '정상' },
+      { 등록번호: 'EM00113', 분류기호: '200', 도서명: '세계 신화 이야기', 저자: '조신화', 출판사: '창비', 출판연도: 2015, 대출횟수: 1, 상태: '정상' },
+      { 등록번호: 'EM00114', 분류기호: '490', 도서명: '인체 해부학 도감', 저자: '의학연구회', 출판사: '사이언스북스', 출판연도: 2011, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00115', 분류기호: '813.7', 도서명: '아몬드', 저자: '손원평', 출판사: '창비', 출판연도: 2020, 대출횟수: 42, 상태: '정상' },
+      // 예상 밖 이상치 데이터 (테스트 검증용)
+      { 등록번호: 'EM00116', 분류기호: '810', 도서명: '출판연도 누락 테스트 도서', 저자: '미상', 출판사: '테스트출판', 출판연도: '', 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00117', 분류기호: '500', 도서명: '음수 대출횟수 오류 도서', 저자: '오류테스트', 출판사: '테스트출판', 출판연도: 2014, 대출횟수: -3, 상태: '정상' },
+      { 등록번호: 'EM00118', 분류기호: '300', 도서명: '', 저자: '제목누락저자', 출판사: '테스트출판', 출판연도: 2012, 대출횟수: 0, 상태: '정상' }
+    ];
+    ingestRows(sampleData, '시연용_학교도서관_장서통계_샘플.csv');
+  });
+
+  // 표준 양식 CSV 다운로드
+  document.getElementById('btn-download-template').addEventListener('click', () => {
+    const csvContent = '\uFEFF등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태\n' +
+      'EM00001,813.6,메밀꽃 필 무렵,이효석,문학과지성사,2012,0,정상\n' +
+      'EM00002,400,최신 과학 트렌드 2011,김과학,과학출판사,2011,1,오훼손\n';
+    downloadBlob(csvContent, '학교도서관_장서분석_표준양식.csv', 'text/csv;charset=utf-8;');
+  });
+
+  function ingestRows(rows, sourceName) {
+    const warnings = [];
+    const cleaned = [];
+
+    rows.forEach((row, idx) => {
+      const rowNum = idx + 2; // 헤더 제외 행 번호
+      const regNo = String(row['등록번호'] || row['ID'] || `ROW-${rowNum}`).trim();
+      const title = String(row['도서명'] || row['서명'] || row['제목'] || '').trim();
+      const author = String(row['저자'] || row['지은이'] || '저자미상').trim();
+      const publisher = String(row['출판사'] || row['발행처'] || '출판사미상').trim();
+      const kdcRaw = String(row['분류기호'] || row['KDC'] || row['청구기호'] || '000').trim();
+      const status = String(row['상태'] || row['도서상태'] || '정상').trim();
+
+      // 예외 1: 도서명 누락 행 제외
+      if (!title) {
+        warnings.push(`${rowNum}행 (${regNo}): 도서명이 비어 있어 분석 대상에서 제외했습니다.`);
+        return;
+      }
+
+      // 예외 2: 출판연도 누락/비정상 처리
+      let pubYear = parseInt(String(row['출판연도'] || row['발행년'] || row['출판년'] || '').replace(/[^0-9]/g, ''), 10);
+      if (isNaN(pubYear) || pubYear < 1900 || pubYear > 2030) {
+        warnings.push(`${rowNum}행 「${title}」: 출판연도("${row['출판연도'] || ''}")가 유효하지 않아 노후도 판별에서 보류 처리했습니다.`);
+        pubYear = null;
+      }
+
+      // 예외 3: 대출횟수 음수/문자 보정
+      let loans = Number(row['대출횟수'] ?? row['대출수'] ?? row['이용횟수'] ?? 0);
+      if (isNaN(loans) || loans < 0) {
+        warnings.push(`${rowNum}행 「${title}」: 대출횟수("${row['대출횟수']}")가 비정상 값이어서 0회로 자동 보정했습니다.`);
+        loans = 0;
+      }
+
+      cleaned.push({
+        id: regNo,
+        kdc: kdcRaw,
+        kdcMain: kdcRaw.charAt(0) || '0',
+        title,
+        author,
+        publisher,
+        pubYear,
+        loans,
+        status,
+        recommended: false,
+        checked: false,
+        reasons: []
+      });
+    });
+
+    rawBooks = cleaned;
+    const summaryText = `[${sourceName}] 총 ${rows.length}행 중 유효 장서 ${cleaned.length}건 로드 완료` +
+      (warnings.length > 0 ? ` (데이터 예외 감지 ${warnings.length}건)` : ' (오류 없음)');
+    showValidationLog(warnings, warnings.length > 0, summaryText);
+
+    runWeedingAnalysis();
+  }
+
+  function showValidationLog(messages, hasWarn, summary = '데이터 검증 결과') {
+    const box = document.getElementById('validation-log');
+    const sumEl = document.getElementById('validation-summary');
+    const listEl = document.getElementById('validation-details');
+
+    box.style.display = 'block';
+    box.classList.toggle('has-warn', hasWarn);
+    sumEl.textContent = summary;
+    listEl.innerHTML = '';
+
+    messages.forEach(msg => {
+      const li = document.createElement('li');
+      li.textContent = msg;
+      listEl.appendChild(li);
+    });
+  }
+
+  document.getElementById('btn-run-analysis').addEventListener('click', () => {
+    if (rawBooks.length === 0) {
+      alert('먼저 장서 데이터를 업로드하거나 시연용 샘플 데이터를 불러오십시오.');
+      return;
+    }
+    runWeedingAnalysis();
+  });
+
+  function runWeedingAnalysis() {
+    const baseYear = parseInt(document.getElementById('crit-base-year').value, 10) || 2026;
+    const ageLimit = parseInt(document.getElementById('crit-age').value, 10) || 10;
+    const loanLimit = parseInt(document.getElementById('crit-loans').value, 10) ?? 1;
+    const copyLimit = parseInt(document.getElementById('crit-copies').value, 10) || 2;
+    const includeDamaged = document.getElementById('crit-damaged').checked;
+    const protectRef = document.getElementById('crit-protect-ref').checked;
+
+    // 동일 서명+저자 기준 복본 수 집계
+    const copyCountMap = {};
+    rawBooks.forEach(b => {
+      const key = `${b.title}__${b.author}`;
+      copyCountMap[key] = (copyCountMap[key] || 0) + 1;
+    });
+
+    analyzedBooks = rawBooks.map(book => {
+      const reasons = [];
+      const isRefBook = book.kdcMain === '0';
+      const isDamaged = /오훼손|훼손|파손|분실|오손/.test(book.status);
+
+      if (protectRef && isRefBook && !isDamaged) {
+        return {
+          ...book,
+          recommended: false,
+          checked: false,
+          reasons: ['보호 제외(KDC 000 참고도서)']
+        };
+      }
+
+      if (includeDamaged && isDamaged) {
+        reasons.push(`물리적 상태 불량(${book.status})`);
+      }
+
+      const age = book.pubYear ? (baseYear - book.pubYear) : 0;
+      const isOld = book.pubYear !== null && age >= ageLimit;
+      const isLowUse = book.loans <= loanLimit;
+
+      if (isOld && isLowUse) {
+        reasons.push(`노후(${age}년 경과) 및 저이용(${book.loans}회)`);
+      } else if (isOld && age >= ageLimit + 5) {
+        reasons.push(`장기 노후(${age}년 경과, 최신성 상실)`);
+      }
+
+      const copyCount = copyCountMap[`${book.title}__${book.author}`] || 1;
+      if (copyCount >= copyLimit && isLowUse) {
+        reasons.push(`과다 복본(${copyCount}권 보유 중 저이용)`);
+      }
+
+      const recommended = reasons.length > 0;
+      return {
+        ...book,
+        recommended,
+        checked: recommended,
+        reasons: recommended ? reasons : ['보존 유지 (기준 충족)']
+      };
+    });
+
+    document.getElementById('weeding-results-section').style.display = 'block';
+    document.getElementById('analysis-timestamp').textContent = `분석 기준연도: ${baseYear}년`;
+    renderWeedingTable();
+    updateWeedingKPIs();
+  }
+
+  function updateWeedingKPIs() {
+    const manualTotal = parseInt(document.getElementById('crit-total-collection').value, 10);
+    const totalBase = (!isNaN(manualTotal) && manualTotal > 0) ? manualTotal : analyzedBooks.length;
+    const recCount = analyzedBooks.filter(b => b.recommended).length;
+    const checkedCount = analyzedBooks.filter(b => b.checked).length;
+
+    const rate = totalBase > 0 ? ((checkedCount / totalBase) * 100) : 0;
+    const isOver = rate > 7.0;
+
+    document.getElementById('kpi-total').textContent = `${totalBase.toLocaleString()}권`;
+    document.getElementById('kpi-parsed-sub').textContent = `파일 내 유효 분석 장서: ${analyzedBooks.length.toLocaleString()}권`;
+
+    document.getElementById('kpi-recommended').textContent = `${recCount.toLocaleString()}권`;
+    document.getElementById('kpi-selected-sub').textContent = `최종 제적 선택: ${checkedCount.toLocaleString()}권`;
+
+    document.getElementById('kpi-rate').textContent = `${rate.toFixed(1)}%`;
+    const gauge = document.getElementById('kpi-gauge');
+    gauge.style.width = `${Math.min((rate / 10) * 100, 100)}%`;
+    gauge.classList.toggle('over', isOver);
+
+    const statusEl = document.getElementById('kpi-legal-status');
+    if (isOver) {
+      statusEl.innerHTML = `<span class="badge badge-warn">법정 상한 초과</span> 연간 제적 상한(7%)을 초과했습니다. 선택 권수를 조정하십시오.`;
+    } else {
+      statusEl.innerHTML = `<span class="badge badge-ok">법정 기준 이내</span> 도서관법 시행령 제적 상한(7% 이내) 충족`;
+    }
+  }
+
+  function renderWeedingTable() {
+    const kdcFilter = document.getElementById('filter-kdc').value;
+    const statusFilter = document.getElementById('filter-status').value;
+    const keyword = document.getElementById('filter-keyword').value.trim().toLowerCase();
+
+    const tbody = document.getElementById('weeding-tbody');
+    tbody.innerHTML = '';
+
+    const filtered = analyzedBooks.filter(book => {
+      if (statusFilter === 'RECOMMENDED' && !book.recommended) return false;
+      if (kdcFilter !== 'ALL' && book.kdcMain !== kdcFilter) return false;
+      if (keyword && !book.title.toLowerCase().includes(keyword) && !book.author.toLowerCase().includes(keyword)) {
+        return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 28px; color: var(--text-muted);">조건에 해당하는 도서가 없습니다.</td></tr>`;
+      return;
+    }
+
+    filtered.forEach(book => {
+      const tr = document.createElement('tr');
+      const reasonBadges = book.reasons.map(r =>
+        `<span class="reason-pill ${book.recommended ? 'primary' : ''}">${r}</span>`
+      ).join('');
+
+      tr.innerHTML = `
+        <td><input type="checkbox" class="row-check" data-id="${book.id}" ${book.checked ? 'checked' : ''} /></td>
+        <td>${book.id}</td>
+        <td>${book.kdc}</td>
+        <td><strong>${escapeHtml(book.title)}</strong></td>
+        <td>${escapeHtml(book.author)} / ${escapeHtml(book.publisher)}</td>
+        <td>${book.pubYear ?? '미상'}</td>
+        <td>${book.loans}회</td>
+        <td>${escapeHtml(book.status)}</td>
+        <td>${reasonBadges}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.row-check').forEach(chk => {
+      chk.addEventListener('change', e => {
+        const target = analyzedBooks.find(b => b.id === e.target.dataset.id);
+        if (target) {
+          target.checked = e.target.checked;
+          updateWeedingKPIs();
+        }
+      });
+    });
+  }
+
+  ['filter-kdc', 'filter-status'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderWeedingTable);
+  });
+  document.getElementById('filter-keyword').addEventListener('input', renderWeedingTable);
+  document.getElementById('crit-total-collection').addEventListener('input', updateWeedingKPIs);
+
+  document.getElementById('check-all-rows').addEventListener('change', e => {
+    const checked = e.target.checked;
+    document.querySelectorAll('.row-check').forEach(chk => {
+      chk.checked = checked;
+      const target = analyzedBooks.find(b => b.id === chk.dataset.id);
+      if (target) target.checked = checked;
+    });
+    updateWeedingKPIs();
+  });
+
+  document.getElementById('btn-toggle-all').addEventListener('click', () => {
+    const anyUnchecked = analyzedBooks.some(b => b.recommended && !b.checked);
+    analyzedBooks.forEach(b => {
+      if (b.recommended) b.checked = anyUnchecked;
+    });
+    renderWeedingTable();
+    updateWeedingKPIs();
+  });
+
+  // 제적 사유서 CSV 내보내기
+  document.getElementById('btn-export-csv').addEventListener('click', () => {
+    const selected = analyzedBooks.filter(b => b.checked);
+    if (selected.length === 0) {
+      alert('내보낼 도서를 1권 이상 선택하십시오.');
+      return;
+    }
+
+    const header = ['등록번호', '분류기호(KDC)', '도서명', '저자', '출판사', '출판연도', '누적대출횟수', '도서상태', '제적사유(KLA기준)'];
+    const rows = selected.map(b => [
+      b.id,
+      b.kdc,
+      `"${b.title.replace(/"/g, '""')}"`,
+      `"${b.author.replace(/"/g, '""')}"`,
+      `"${b.publisher.replace(/"/g, '""')}"`,
+      b.pubYear ?? '미상',
+      b.loans,
+      b.status,
+      `"${b.reasons.join('; ')}"`
+    ]);
+
+    const csv = '\uFEFF' + [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const today = new Date().toISOString().slice(0, 10);
+    downloadBlob(csv, `학교도서관_장서제적_사유서_${today}.csv`, 'text/csv;charset=utf-8;');
+  });
+
+  /* =========================================================================
+   * 2. AUTOMATIC CITATION GENERATOR (자동 출처 생성기)
+   * ========================================================================= */
+  const citeTypeEl = document.getElementById('cite-type');
+  const citeStyleEl = document.getElementById('cite-style');
+  const citeQueryEl = document.getElementById('cite-query');
+  const citeStatusEl = document.getElementById('cite-status');
+
+  const metaFields = ['meta-author', 'meta-year', 'meta-title', 'meta-publisher', 'meta-detail', 'meta-url'];
+  let bibliographyList = [];
+
+  citeTypeEl.addEventListener('change', () => {
+    const type = citeTypeEl.value;
+    const qLabel = document.getElementById('cite-query-label');
+    const pubLabel = document.getElementById('meta-pub-label');
+    const detLabel = document.getElementById('meta-detail-label');
+
+    if (type === 'book') {
+      qLabel.textContent = '도서명 또는 ISBN 입력';
+      citeQueryEl.placeholder = '예: 학교도서관 운영의 실제 또는 9788976781857';
+      pubLabel.textContent = '출판사';
+      detLabel.textContent = '발행지 (선택)';
+    } else if (type === 'journal') {
+      qLabel.textContent = 'DOI 번호 또는 논문 제목 입력';
+      citeQueryEl.placeholder = '예: 10.4275/KSLIS.2024.58.1.005 또는 학교도서관 평가';
+      pubLabel.textContent = '학술지명';
+      detLabel.textContent = '권(호), 시작-끝 페이지';
+    } else {
+      qLabel.textContent = '웹페이지 또는 온라인 기사 URL 입력';
+      citeQueryEl.placeholder = '예: https://www.moe.go.kr/...';
+      pubLabel.textContent = '웹사이트 / 언론사명';
+      detLabel.textContent = '검색일 (자동 입력)';
+    }
+    updateCitationPreview();
+  });
+
+  document.getElementById('btn-fetch-meta').addEventListener('click', fetchMetadata);
+  citeQueryEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') fetchMetadata();
+  });
+
+  async function fetchMetadata() {
+    const type = citeTypeEl.value;
+    const query = citeQueryEl.value.trim();
+
+    if (!query) {
+      showCiteStatus('검색할 도서명, DOI 또는 URL을 입력하십시오.');
+      return;
+    }
+
+    showCiteStatus('외부 서지 데이터베이스에서 메타데이터를 조회하고 있습니다...');
+
+    if (type === 'web') {
+      handleWebUrlParse(query);
+      return;
+    }
+
+    if (type === 'book') {
+      try {
+        const cleanIsbn = query.replace(/[^0-9Xx]/g, '');
+        const isIsbn = cleanIsbn.length === 10 || cleanIsbn.length === 13;
+        const apiQuery = isIsbn ? `isbn:${cleanIsbn}` : encodeURIComponent(query);
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${apiQuery}&maxResults=1`);
+        const data = await res.json();
+
+        if (data.items && data.items.length > 0) {
+          const info = data.items[0].volumeInfo;
+          document.getElementById('meta-author').value = (info.authors || []).join(', ');
+          document.getElementById('meta-year').value = (info.publishedDate || '').slice(0, 4);
+          document.getElementById('meta-title').value = info.title || '';
+          document.getElementById('meta-publisher').value = info.publisher || '';
+          document.getElementById('meta-detail').value = '';
+          document.getElementById('meta-url').value = info.infoLink || '';
+          showCiteStatus(`도서 서지 정보를 불러왔습니다: 「${info.title}」`);
+          updateCitationPreview();
+        } else {
+          showCiteStatus('일치하는 도서 검색 결과가 없습니다. 아래 상세 입력란에 직접 서지 정보를 기재해 주십시오.');
+        }
+      } catch (err) {
+        showCiteStatus('서지 조회 중 네트워크 오류가 발생했습니다. 아래 입력란에 수동으로 입력하십시오.');
+      }
+      return;
+    }
+
+    if (type === 'journal') {
+      try {
+        const isDoi = /^10\.\d{4,9}\/[-._;()/:A-Z0-9]+$/i.test(query);
+        const endpoint = isDoi
+          ? `https://api.crossref.org/works/${encodeURIComponent(query)}`
+          : `https://api.crossref.org/works?query=${encodeURIComponent(query)}&rows=1`;
+
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error('DOI 조회 실패');
+        const data = await res.json();
+        const item = isDoi ? data.message : (data.message.items && data.message.items[0]);
+
+        if (item) {
+          const authors = (item.author || []).map(a =>
+            a.family && a.given ? `${a.family}, ${a.given}` : (a.family || a.name || '')
+          ).join(', ');
+          const year = item.published?.['date-parts']?.[0]?.[0] || '';
+          const title = Array.isArray(item.title) ? item.title[0] : (item.title || '');
+          const journal = Array.isArray(item['container-title']) ? item['container-title'][0] : '';
+          const vol = item.volume || '';
+          const issue = item.issue ? `(${item.issue})` : '';
+          const page = item.page || '';
+
+          document.getElementById('meta-author').value = authors;
+          document.getElementById('meta-year').value = year;
+          document.getElementById('meta-title').value = title;
+          document.getElementById('meta-publisher').value = journal;
+          document.getElementById('meta-detail').value = `${vol}${issue}${page ? ', ' + page : ''}`;
+          document.getElementById('meta-url').value = item.DOI ? `https://doi.org/${item.DOI}` : '';
+          showCiteStatus(`학술논문 서지 정보를 불러왔습니다: 「${title}」`);
+          updateCitationPreview();
+        } else {
+          showCiteStatus('일치하는 학술논문 결과가 없습니다. 아래 입력란에 수동 입력해 주십시오.');
+        }
+      } catch (err) {
+        showCiteStatus('Crossref API 조회에 실패했습니다. DOI 형식을 확인하거나 아래에 수동 입력하십시오.');
+      }
+    }
+  }
+
+  function handleWebUrlParse(rawUrl) {
+    let formattedUrl = rawUrl;
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = 'https://' + formattedUrl;
+    }
+
+    try {
+      const urlObj = new URL(formattedUrl);
+      const today = new Date();
+      const accessDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+
+      document.getElementById('meta-url').value = urlObj.href;
+      document.getElementById('meta-publisher').value = urlObj.hostname.replace(/^www\./, '');
+      document.getElementById('meta-detail').value = accessDate;
+      if (!document.getElementById('meta-year').value) {
+        document.getElementById('meta-year').value = String(today.getFullYear());
+      }
+      showCiteStatus('URL 도메인 및 접속일자를 자동 설정했습니다. 웹문서 제목과 작성자를 보완 입력하십시오.');
+      updateCitationPreview();
+    } catch (e) {
+      showCiteStatus('유효하지 않은 URL 형식입니다. https://를 포함한 전체 주소를 확인하십시오.');
+    }
+  }
+
+  function showCiteStatus(msg) {
+    citeStatusEl.style.display = 'block';
+    citeStatusEl.textContent = msg;
+  }
+
+  metaFields.forEach(id => {
+    document.getElementById(id).addEventListener('input', updateCitationPreview);
+  });
+  citeStyleEl.addEventListener('change', updateCitationPreview);
+
+  function buildCitationText() {
+    const type = citeTypeEl.value;
+    const style = citeStyleEl.value;
+    const author = document.getElementById('meta-author').value.trim() || '저자미상';
+    const year = document.getElementById('meta-year').value.trim() || '연도미상';
+    const title = document.getElementById('meta-title').value.trim();
+    const publisher = document.getElementById('meta-publisher').value.trim();
+    const detail = document.getElementById('meta-detail').value.trim();
+    const url = document.getElementById('meta-url').value.trim();
+
+    if (!title && !publisher && !url) return '';
+
+    // 1. 한국문헌정보학회지 스타일
+    if (style === 'klis') {
+      if (type === 'book') {
+        return `${author}. ${year}. 『${title}』. ${detail ? detail + ': ' : ''}${publisher}.`;
+      }
+      if (type === 'journal') {
+        return `${author}. ${year}. "${title}." 『${publisher}』, ${detail}.${url ? ' ' + url : ''}`;
+      }
+      return `${author}. ${year}. "${title}." ${publisher}. [인용일자: ${detail || '2026년'}]. <${url}>.`;
+    }
+
+    // 2. APA 7판 스타일
+    if (style === 'apa') {
+      if (type === 'book') {
+        return `${author} (${year}). ${title}. ${publisher}.${url ? ' ' + url : ''}`;
+      }
+      if (type === 'journal') {
+        return `${author} (${year}). ${title}. ${publisher}, ${detail}.${url ? ' ' + url : ''}`;
+      }
+      return `${author} (${year}). ${title}. ${publisher}. ${detail ? detail + ' 검색, ' : ''}${url}`;
+    }
+
+    // 3. MLA 9판 스타일
+    if (type === 'book') {
+      return `${author}. ${title}. ${publisher}, ${year}.`;
+    }
+    if (type === 'journal') {
+      return `${author}. "${title}." ${publisher}, ${detail}, ${year}${url ? ', ' + url : ''}.`;
+    }
+    return `${author}. "${title}." ${publisher}, ${year}, ${url}. ${detail ? detail + ' 접속.' : ''}`;
+  }
+
+  function updateCitationPreview() {
+    const text = buildCitationText();
+    const outputEl = document.getElementById('citation-output');
+    outputEl.textContent = text || '위에서 자료 정보를 조회하거나 직접 입력하면 선택한 양식의 참고문헌 문장이 자동 생성됩니다.';
+  }
+
+  document.getElementById('btn-copy-single').addEventListener('click', () => {
+    const text = buildCitationText();
+    if (!text) {
+      alert('복사할 출처 내용이 없습니다.');
+      return;
+    }
+    navigator.clipboard.writeText(text).then(() => {
+      showCiteStatus('생성된 참고문헌이 클립보드에 복사되었습니다.');
+    });
+  });
+
+  document.getElementById('btn-add-bib').addEventListener('click', () => {
+    const text = buildCitationText();
+    if (!text) {
+      alert('추가할 출처 내용을 먼저 입력하십시오.');
+      return;
+    }
+    if (bibliographyList.includes(text)) {
+      alert('이미 목록에 등록된 동일한 참고문헌입니다.');
+      return;
+    }
+    bibliographyList.push(text);
+    renderBibList();
+    showCiteStatus('참고문헌 목록에 항목을 추가했습니다.');
+  });
+
+  document.getElementById('btn-sort-bib').addEventListener('click', () => {
+    bibliographyList.sort((a, b) => a.localeCompare(b, 'ko'));
+    renderBibList();
+  });
+
+  document.getElementById('btn-copy-all-bib').addEventListener('click', () => {
+    if (bibliographyList.length === 0) return;
+    navigator.clipboard.writeText(bibliographyList.join('\n')).then(() => {
+      showCiteStatus(`총 ${bibliographyList.length}건의 참고문헌 전체가 클립보드에 복사되었습니다.`);
+    });
+  });
+
+  document.getElementById('btn-clear-bib').addEventListener('click', () => {
+    bibliographyList = [];
+    renderBibList();
+  });
+
+  function renderBibList() {
+    const listEl = document.getElementById('bib-list');
+    document.getElementById('bib-count').textContent = bibliographyList.length;
+
+    if (bibliographyList.length === 0) {
+      listEl.innerHTML = `<li style="padding: 16px 0; color: var(--text-muted); font-size: 0.875rem;">아직 추가된 참고문헌이 없습니다.</li>`;
+      return;
+    }
+
+    listEl.innerHTML = '';
+    bibliographyList.forEach((item, index) => {
+      const li = document.createElement('li');
+      li.className = 'bib-item';
+      li.innerHTML = `
+        <div class="bib-item-text">${escapeHtml(item)}</div>
+        <button type="button" class="btn btn-sm" data-idx="${index}">삭제</button>
+      `;
+      li.querySelector('button').addEventListener('click', () => {
+        bibliographyList.splice(index, 1);
+        renderBibList();
+      });
+      listEl.appendChild(li);
+    });
+  }
+
+  /* =========================================================================
+   * UTILITIES
+   * ========================================================================= */
+  function downloadBlob(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+
+</body>
+</html>
