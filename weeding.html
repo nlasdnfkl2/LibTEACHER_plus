@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LIB-TEACHER // 장서관리 페이지 (제적 판별 및 사유서)</title>
+
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #fdfbf7;
+      --black: #111111;
+      --bg-card: #ffffff;
+      --bg-subtle: #f4f1ea;
+      --ink-muted: #4a4a4a;
+      --yellow: #ffd83b;
+      --pink: #ff4757;
+      --cyan: #48dbfb;
+      --green: #2ed573;
+      --border: 3px solid #111111;
+      --border-thick: 4px solid #111111;
+      --shadow-lg: 6px 6px 0px #111111;
+      --shadow-md: 4px 4px 0px #111111;
+      --shadow-sm: 2px 2px 0px #111111;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--black);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.55;
+      padding: 24px 16px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      border-bottom: var(--border-thick);
+    }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .brand-chip {
+      background: var(--black);
+      color: var(--yellow);
+      font-weight: 900;
+      font-size: 0.92rem;
+      padding: 4px 10px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border: var(--border);
+      background: #ffffff;
+      color: var(--black);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 900;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-link-btn.active { background: var(--yellow); }
+    .nav-link-btn.alt { background: var(--cyan); }
+
+    .hero-header {
+      background: var(--bg-card);
+      border: var(--border-thick);
+      box-shadow: var(--shadow-lg);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
+
+    .hero-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .brutal-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      border: var(--border);
+      background: var(--yellow);
+      color: var(--black);
+    }
+
+    .brutal-badge.sky { background: var(--cyan); }
+    .brutal-badge.green { background: var(--green); }
+
+    .hero-title {
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .hero-desc {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--ink-muted);
+    }
+
+    .brutal-card {
+      background: var(--bg-card);
+      border: var(--border-thick);
+      box-shadow: var(--shadow-lg);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+      border-bottom: var(--border);
+    }
+
+    .card-title {
+      font-size: 1.18rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    @media (max-width: 860px) {
+      .grid-2, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 11px 14px;
+      border: var(--border);
+      background: var(--bg-subtle);
+      color: var(--black);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 0;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      background: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .inline-reason-input {
+      width: 100%;
+      min-width: 180px;
+      padding: 6px 9px !important;
+      font-size: 0.84rem !important;
+      margin-top: 6px;
+      background: #ffffff !important;
+    }
+
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .check-label input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--black);
+      cursor: pointer;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 18px;
+      border: var(--border);
+      box-shadow: var(--shadow-md);
+      background: var(--bg-card);
+      color: var(--black);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 800;
+      cursor: pointer;
+      border-radius: 0;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+
+    .btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0px #111111; }
+    .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0px #111111; }
+
+    .btn-yellow { background: var(--yellow); }
+    .btn-sky { background: var(--cyan); }
+    .btn-green { background: var(--green); }
+    .btn-pink { background: var(--pink); color: #ffffff; }
+    .btn-sm { padding: 7px 12px; font-size: 0.82rem; box-shadow: var(--shadow-sm); }
+
+    .dropzone {
+      border: 3px dashed var(--black);
+      background: var(--bg-subtle);
+      padding: 30px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+    }
+
+    .dropzone:hover, .dropzone.dragover { background: var(--yellow); }
+    .dropzone-main { font-size: 1.05rem; font-weight: 900; margin-bottom: 6px; }
+    .dropzone-sub { font-size: 0.85rem; font-weight: 600; color: var(--ink-muted); }
+
+    .alert-box {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border: var(--border);
+      box-shadow: var(--shadow-sm);
+      background: var(--green);
+      display: none;
+    }
+
+    .alert-box.warn { background: var(--pink); color: #ffffff; }
+    .alert-box-title { font-weight: 900; font-size: 0.95rem; margin-bottom: 6px; }
+    .alert-box ul { margin-left: 20px; font-size: 0.86rem; font-weight: 600; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 860px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+    .kpi-box {
+      border: var(--border);
+      box-shadow: var(--shadow-md);
+      padding: 18px 20px;
+      background: var(--bg-subtle);
+    }
+
+    .kpi-box.highlight-yellow { background: var(--yellow); }
+    .kpi-box.highlight-green { background: var(--green); }
+    .kpi-box.highlight-pink { background: var(--pink); color: #ffffff; }
+
+    .kpi-label { font-size: 0.82rem; font-weight: 800; margin-bottom: 6px; }
+    .kpi-num { font-size: 2rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.15; }
+    .kpi-foot { font-size: 0.82rem; font-weight: 700; margin-top: 8px; }
+
+    .cap-adjust-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      border: var(--border);
+      box-shadow: var(--shadow-sm);
+      background: #fff3cd;
+    }
+
+    .cap-adjust-bar.show { display: flex; }
+
+    .meter-track {
+      height: 14px;
+      background: #ffffff;
+      border: 2px solid var(--black);
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .meter-fill { height: 100%; width: 0%; background: var(--black); transition: width 0.25s ease; }
+
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .filter-inputs { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+    .table-box { border: var(--border); overflow-x: auto; background: #ffffff; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+
+    th {
+      background: var(--black);
+      color: #ffffff;
+      font-weight: 800;
+      padding: 12px 14px;
+      white-space: nowrap;
+    }
+
+    td { padding: 11px 14px; border-bottom: 2px solid var(--black); font-weight: 600; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg-subtle); }
+
+    .tag-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      border: 2px solid var(--black);
+      background: var(--bg-subtle);
+      margin: 2px 4px 2px 0;
+    }
+
+    .tag-pill.rec { background: var(--yellow); }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink-muted);
+      margin-top: 24px;
+    }
+
+    @media print {
+      body { background: #ffffff; padding: 0; }
+      .topbar,
+      .hero-header,
+      #upload-card,
+      #criteria-card,
+      .filter-bar,
+      .cap-adjust-bar,
+      .footer-note { display: none !important; }
+      .brutal-card { box-shadow: none; border: 2px solid #111111; padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-chip">LIB-TEACHER</span>
+      <span class="brutal-badge">01 · 장서관리</span>
+    </div>
+    <nav class="nav-links" aria-label="페이지 이동">
+      <a href="index.html" class="nav-link-btn">⌂ 입장 페이지</a>
+      <a href="weeding.html" class="nav-link-btn active">장서관리</a>
+      <a href="citation.html" class="nav-link-btn alt">출처 관리 →</a>
+    </nav>
+  </header>
+
+  <section class="hero-header">
+    <div class="hero-badge-row">
+      <span class="brutal-badge">도서관법 시행령 7% 상한 대조</span>
+      <span class="brutal-badge green">KLA 학교도서관 기준</span>
+      <span class="brutal-badge sky">CSV · XLSX · 인쇄 출력</span>
+    </div>
+    <h1 class="hero-title">학교도서관 장서 제적(폐기) 판별 및 사유서</h1>
+    <p class="hero-desc">
+      장서·대출 통계 파일을 분석해 법정 한도 내 폐기 추천 목록과 제적 사유서를 산출합니다.
+    </p>
+  </section>
+
+  <!-- 1. File Upload Card -->
+  <section class="brutal-card" id="upload-card">
+    <div class="card-header">
+      <h2 class="card-title">1. 장서 및 대출 통계 업로드</h2>
+      <span class="brutal-badge sky">CSV · XLSX · XLS 지원</span>
+    </div>
+
+    <div id="dropzone" class="dropzone" tabindex="0">
+      <div class="dropzone-main">장서·대출 통계 파일을 드래그하거나 클릭하여 선택</div>
+      <div class="dropzone-sub">인식 열: 등록번호, 분류기호(KDC), 도서명, 저자, 출판사, 출판연도, 대출횟수, 상태</div>
+      <input type="file" id="file-input" accept=".csv,.xlsx,.xls" hidden />
+    </div>
+
+    <div class="btn-row">
+      <button type="button" class="btn btn-yellow" id="btn-load-sample">
+        샘플 데이터 불러오기 (정상 + 이상치 포함)
+      </button>
+      <button type="button" class="btn" id="btn-download-template">
+        표준 CSV 양식 다운로드
+      </button>
+    </div>
+
+    <div id="validation-box" class="alert-box">
+      <div class="alert-box-title" id="validation-title">데이터 검증 완료</div>
+      <ul id="validation-list"></ul>
+    </div>
+  </section>
+
+  <!-- 2. Criteria Card -->
+  <section class="brutal-card" id="criteria-card">
+    <div class="card-header">
+      <h2 class="card-title">2. 법령 및 KLA 폐기 판별 기준 설정</h2>
+      <span class="brutal-badge">도서관법 시행령 제적 상한 7%</span>
+    </div>
+
+    <div class="grid-4">
+      <div>
+        <label class="field-label" for="crit-year">기준 연도</label>
+        <input type="number" id="crit-year" value="2026" min="2000" max="2035" />
+      </div>
+      <div>
+        <label class="field-label" for="crit-age">노후 경과 연수 (년 이상)</label>
+        <input type="number" id="crit-age" value="10" min="1" max="50" />
+      </div>
+      <div>
+        <label class="field-label" for="crit-loans">최대 누적 대출 (회 이하)</label>
+        <input type="number" id="crit-loans" value="1" min="0" max="100" />
+      </div>
+      <div>
+        <label class="field-label" for="crit-copies">과다 복본 기준 (권 이상)</label>
+        <input type="number" id="crit-copies" value="2" min="2" max="20" />
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top: 14px;">
+      <div>
+        <label class="check-label">
+          <input type="checkbox" id="crit-damaged" checked />
+          <span>오훼손·파손·분실 상태 도서 우선 추천</span>
+        </label>
+        <label class="check-label">
+          <input type="checkbox" id="crit-protect-ref" checked />
+          <span>참고도서(KDC 000번대 총류·사전류) 자동 보호 제외</span>
+        </label>
+      </div>
+      <div>
+        <label class="field-label" for="crit-total-books">학교 전체 보유 장서 수 (법정 7% 계산 모수)</label>
+        <input type="number" id="crit-total-books" placeholder="비워두면 업로드된 파일 권수를 기준으로 계산" min="1" />
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button type="button" class="btn btn-sky" id="btn-reanalyze">
+        설정 기준으로 폐기 대상 재분석 실행
+      </button>
+    </div>
+  </section>
+
+  <!-- 3. Results Card -->
+  <section class="brutal-card" id="result-section" style="display: none;">
+    <div class="card-header">
+      <h2 class="card-title">3. 제적 추천 결과 및 사유서 출력</h2>
+      <span class="brutal-badge green" id="result-meta-badge">분석 완료</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-label">전체 기준 장서 수</div>
+        <div class="kpi-num" id="kpi-total">0권</div>
+        <div class="kpi-foot" id="kpi-valid-sub">유효 분석 데이터 0건</div>
+      </div>
+
+      <div class="kpi-box highlight-yellow">
+        <div class="kpi-label">폐기 추천 / 최종 선택</div>
+        <div class="kpi-num" id="kpi-rec">0권</div>
+        <div class="kpi-foot" id="kpi-sel-sub">사유서 출력 선택: 0권</div>
+      </div>
+
+      <div class="kpi-box highlight-green" id="kpi-legal-box">
+        <div class="kpi-label">예상 제적·폐기율 (법정 상한 7.0%)</div>
+        <div class="kpi-num" id="kpi-rate">0.0%</div>
+        <div class="meter-track">
+          <div class="meter-fill" id="kpi-meter"></div>
+        </div>
+        <div class="kpi-foot" id="kpi-legal-msg">법정 제적 상한 이내</div>
+      </div>
+    </div>
+
+    <div class="cap-adjust-bar" id="cap-adjust-bar">
+      <div style="font-weight: 800; font-size: 0.9rem;" id="cap-adjust-text">
+        법정 상한(7.0%)을 초과했습니다. 최대 허용 권수에 맞춰 자동으로 선택을 줄일 수 있습니다.
+      </div>
+      <button type="button" class="btn btn-yellow btn-sm" id="btn-trim-to-cap">
+        7.0% 상한 이내로 자동 조정
+      </button>
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter-inputs">
+        <select id="filter-kdc" style="width: auto;">
+          <option value="ALL">전체 KDC 분류</option>
+          <option value="0">000 총류</option>
+          <option value="1">100 철학</option>
+          <option value="2">200 종교</option>
+          <option value="3">300 사회과학</option>
+          <option value="4">400 자연과학</option>
+          <option value="5">500 기술과학</option>
+          <option value="6">600 예술</option>
+          <option value="7">700 언어</option>
+          <option value="8">800 문학</option>
+          <option value="9">900 역사</option>
+        </select>
+
+        <select id="filter-mode" style="width: auto;">
+          <option value="REC">폐기 추천 도서만 보기</option>
+          <option value="ALL">전체 도서 보기</option>
+        </select>
+
+        <input type="text" id="filter-search" placeholder="도서명 또는 저자 검색..." style="width: 210px;" />
+      </div>
+
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-sm" id="btn-toggle-rec">추천 도서 일괄 선택/해제</button>
+        <button type="button" class="btn btn-green btn-sm" id="btn-export-csv">사유서 CSV</button>
+        <button type="button" class="btn btn-sky btn-sm" id="btn-export-xlsx">사유서 XLSX</button>
+        <button type="button" class="btn btn-yellow btn-sm" id="btn-print-report">인쇄 / PDF 저장</button>
+      </div>
+    </div>
+
+    <div class="table-box">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 44px;"><input type="checkbox" id="chk-master" checked /></th>
+            <th>등록번호</th>
+            <th>KDC</th>
+            <th>도서명</th>
+            <th>저자 / 출판사</th>
+            <th>출판연도</th>
+            <th>대출</th>
+            <th>상태</th>
+            <th>판별 결과 및 제적 사유(수정 가능)</th>
+          </tr>
+        </thead>
+        <tbody id="weeding-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="footer-note">
+    LIB-TEACHER // <a href="index.html" style="color:inherit;">입장 페이지</a> · <a href="citation.html" style="color:inherit;">출처 관리 페이지</a>
+  </footer>
+</div>
+
+<script>
+  let rawBooks = [];
+  let analyzedBooks = [];
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) parseUploadedFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', e => {
+    if (e.target.files.length) parseUploadedFile(e.target.files[0]);
+  });
+
+  function parseUploadedFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+        if (!rows.length) {
+          showValidation(['파일에 분석할 데이터 행이 없습니다.'], true, '파일 오류');
+          return;
+        }
+        processRawRows(rows, file.name);
+      } catch (err) {
+        showValidation([`파일을 읽는 중 오류가 발생했습니다: ${err.message}`], true, '파일 파싱 실패');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  document.getElementById('btn-load-sample').addEventListener('click', () => {
+    const sample = [
+      { 등록번호: 'EM00101', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00102', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 1, 상태: '정상' },
+      { 등록번호: 'EM00103', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 0, 상태: '오훼손' },
+      { 등록번호: 'EM00104', 분류기호: '400', 도서명: '청소년 과학상식 백과 2010', 저자: '과학편집부', 출판사: '미래출판', 출판연도: 2010, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00105', 분류기호: '031', 도서명: '표준국어대사전 개정판', 저자: '국립국어원', 출판사: '두산동아', 출판연도: 2008, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00106', 분류기호: '320', 도서명: '쉽게 읽는 헌법과 시민사회', 저자: '박정훈', 출판사: '사회평론', 출판연도: 2024, 대출횟수: 15, 상태: '정상' },
+      { 등록번호: 'EM00107', 분류기호: '550', 도서명: '윈도우 XP 활용 완전정복', 저자: '김컴퓨터', 출판사: '한빛미디어', 출판연도: 2005, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00108', 분류기호: '911', 도서명: '한국사 핵심 사료집', 저자: '이역사', 출판사: '역사비평사', 출판연도: 2013, 대출횟수: 1, 상태: '파손' },
+      { 등록번호: 'EM00109', 분류기호: '843', 도서명: '앵무새 죽이기', 저자: '하퍼 리', 출판사: '열린책들', 출판연도: 2022, 대출횟수: 24, 상태: '정상' },
+      { 등록번호: 'EM00110', 분류기호: '100', 도서명: '서양 철학사 산책', 저자: '최철학', 출판사: '철학과현실사', 출판연도: 2014, 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00111', 분류기호: '740', 도서명: '기초 영문법 3300제', 저자: '영어연구회', 출판사: '능률교육', 출판연도: 2012, 대출횟수: 1, 상태: '정상' },
+      { 등록번호: 'EM00112', 분류기호: '600', 도서명: '현대 미술의 이해', 저자: '정예술', 출판사: '미진사', 출판연도: 2023, 대출횟수: 9, 상태: '정상' },
+      { 등록번호: 'EM00113', 분류기호: '813.7', 도서명: '아몬드', 저자: '손원평', 출판사: '창비', 출판연도: 2020, 대출횟수: 41, 상태: '정상' },
+      { 등록번호: 'EM00114', 분류기호: '810', 도서명: '출판연도 누락 테스트 도서', 저자: '미상', 출판사: '테스트출판', 출판연도: '', 대출횟수: 0, 상태: '정상' },
+      { 등록번호: 'EM00115', 분류기호: '500', 도서명: '음수 대출횟수 보정 테스트', 저자: '오류테스트', 출판사: '테스트출판', 출판연도: 2014, 대출횟수: -4, 상태: '정상' },
+      { 등록번호: 'EM00116', 분류기호: '300', 도서명: '', 저자: '제목공백행', 출판사: '테스트출판', 출판연도: 2012, 대출횟수: 0, 상태: '정상' }
+    ];
+    processRawRows(sample, 'sample_books.csv');
+  });
+
+  document.getElementById('btn-download-template').addEventListener('click', () => {
+    const csv = '\uFEFF등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태\n' +
+      'EM00001,813.6,메밀꽃 필 무렵,이효석,문학과지성사,2012,0,정상\n' +
+      'EM00002,400,최신 과학 트렌드 2011,김과학,과학출판사,2011,1,오훼손\n';
+    triggerDownload(csv, '학교도서관_장서분석_표준양식.csv', 'text/csv;charset=utf-8;');
+  });
+
+  function processRawRows(rows, filename) {
+    const warnings = [];
+    const valid = [];
+
+    rows.forEach((r, i) => {
+      const rowIdx = i + 2;
+      const id = String(r['등록번호'] || r['ID'] || `ROW-${rowIdx}`).trim();
+      const title = String(r['도서명'] || r['서명'] || r['제목'] || '').trim();
+      const author = String(r['저자'] || r['지은이'] || '저자미상').trim();
+      const publisher = String(r['출판사'] || r['발행처'] || '출판사미상').trim();
+      const kdc = String(r['분류기호'] || r['KDC'] || r['청구기호'] || '000').trim();
+      const status = String(r['상태'] || r['도서상태'] || '정상').trim();
+
+      if (!title) {
+        warnings.push(`${rowIdx}행 (${id}): 도서명이 누락되어 분석에서 제외했습니다.`);
+        return;
+      }
+
+      let pubYear = parseInt(String(r['출판연도'] || r['발행년'] || '').replace(/[^0-9]/g, ''), 10);
+      if (isNaN(pubYear) || pubYear < 1900 || pubYear > 2030) {
+        warnings.push(`${rowIdx}행 「${title}」: 출판연도("${r['출판연도'] || ''}") 이상으로 노후도 판별을 보류했습니다.`);
+        pubYear = null;
+      }
+
+      let loans = Number(r['대출횟수'] ?? r['대출수'] ?? 0);
+      if (isNaN(loans) || loans < 0) {
+        warnings.push(`${rowIdx}행 「${title}」: 음수/오류 대출횟수("${r['대출횟수']}")를 0회로 보정했습니다.`);
+        loans = 0;
+      }
+
+      valid.push({
+        id,
+        kdc,
+        kdcMain: kdc.charAt(0) || '0',
+        title,
+        author,
+        publisher,
+        pubYear,
+        loans,
+        status,
+        recommended: false,
+        checked: false,
+        reasons: [],
+        customNote: ''
+      });
+    });
+
+    rawBooks = valid;
+    const headTitle = `[${filename}] 총 ${rows.length}행 중 유효 ${valid.length}건 로드` +
+      (warnings.length ? ` (예외 데이터 ${warnings.length}건 자동 처리)` : ' (이상 없음)');
+    showValidation(warnings, warnings.length > 0, headTitle);
+    analyzeBooks();
+  }
+
+  function showValidation(list, isWarn, title) {
+    const box = document.getElementById('validation-box');
+    const titleEl = document.getElementById('validation-title');
+    const ul = document.getElementById('validation-list');
+
+    box.style.display = 'block';
+    box.classList.toggle('warn', isWarn);
+    titleEl.textContent = title;
+    ul.innerHTML = '';
+    list.forEach(msg => {
+      const li = document.createElement('li');
+      li.textContent = msg;
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById('btn-reanalyze').addEventListener('click', () => {
+    if (!rawBooks.length) {
+      alert('먼저 장서 데이터를 업로드하거나 샘플 데이터를 불러오십시오.');
+      return;
+    }
+    analyzeBooks();
+  });
+
+  function normKey(b) {
+    return `${b.title.replace(/\s+/g, '').toLowerCase()}__${b.author.replace(/\s+/g, '').toLowerCase()}`;
+  }
+
+  function analyzeBooks() {
+    const baseYear = parseInt(document.getElementById('crit-year').value, 10) || 2026;
+    const ageLimit = parseInt(document.getElementById('crit-age').value, 10) || 10;
+    const loanLimit = parseInt(document.getElementById('crit-loans').value, 10) ?? 1;
+    const copyLimit = parseInt(document.getElementById('crit-copies').value, 10) || 2;
+    const includeDamaged = document.getElementById('crit-damaged').checked;
+    const protectRef = document.getElementById('crit-protect-ref').checked;
+
+    const copyMap = {};
+    rawBooks.forEach(b => {
+      const k = normKey(b);
+      copyMap[k] = (copyMap[k] || 0) + 1;
+    });
+
+    analyzedBooks = rawBooks.map(b => {
+      const reasons = [];
+      const isRef = b.kdcMain === '0';
+      const isDamaged = /오훼손|훼손|파손|분실|오손/.test(b.status);
+
+      if (protectRef && isRef && !isDamaged) {
+        return { ...b, recommended: false, checked: false, reasons: ['보호 제외 (KDC 000 참고도서)'], customNote: '' };
+      }
+
+      if (includeDamaged && isDamaged) {
+        reasons.push(`물리적 훼손 (${b.status})`);
+      }
+
+      const age = b.pubYear ? baseYear - b.pubYear : 0;
+      const isOld = b.pubYear !== null && age >= ageLimit;
+      const isLow = b.loans <= loanLimit;
+
+      if (isOld && isLow) {
+        reasons.push(`노후(${age}년)·저이용(${b.loans}회)`);
+      } else if (isOld && age >= ageLimit + 5) {
+        reasons.push(`장기 노후(${age}년 경과)`);
+      }
+
+      const copies = copyMap[normKey(b)] || 1;
+      if (copies >= copyLimit && isLow) {
+        reasons.push(`과다 복본(${copies}권 중 저이용)`);
+      }
+
+      const rec = reasons.length > 0;
+      return {
+        ...b,
+        recommended: rec,
+        checked: rec,
+        reasons: rec ? reasons : ['보존 유지'],
+        customNote: ''
+      };
+    });
+
+    document.getElementById('result-section').style.display = 'block';
+    document.getElementById('result-meta-badge').textContent = `기준연도 ${baseYear}년`;
+    renderTable();
+    refreshKpis();
+  }
+
+  function getTotalBaseCount() {
+    const manualTotal = parseInt(document.getElementById('crit-total-books').value, 10);
+    return (!isNaN(manualTotal) && manualTotal > 0) ? manualTotal : analyzedBooks.length;
+  }
+
+  function refreshKpis() {
+    const totalBase = getTotalBaseCount();
+    const recCount = analyzedBooks.filter(b => b.recommended).length;
+    const selCount = analyzedBooks.filter(b => b.checked).length;
+
+    const rate = totalBase > 0 ? (selCount / totalBase) * 100 : 0;
+    const isOver = rate > 7.0;
+    const maxAllowed = Math.floor(totalBase * 0.07);
+
+    document.getElementById('kpi-total').textContent = `${totalBase.toLocaleString()}권`;
+    document.getElementById('kpi-valid-sub').textContent = `파일 유효 장서 ${analyzedBooks.length.toLocaleString()}건`;
+
+    document.getElementById('kpi-rec').textContent = `${recCount.toLocaleString()}권`;
+    document.getElementById('kpi-sel-sub').textContent = `사유서 출력 선택: ${selCount.toLocaleString()}권`;
+
+    document.getElementById('kpi-rate').textContent = `${rate.toFixed(1)}%`;
+    document.getElementById('kpi-meter').style.width = `${Math.min((rate / 10) * 100, 100)}%`;
+
+    const legalBox = document.getElementById('kpi-legal-box');
+    const legalMsg = document.getElementById('kpi-legal-msg');
+    legalBox.classList.toggle('highlight-pink', isOver);
+    legalBox.classList.toggle('highlight-green', !isOver);
+    legalMsg.textContent = isOver
+      ? `경고: 법정 제적 상한(7%, 최대 ${maxAllowed}권) 초과`
+      : `충족: 도서관법 시행령 제적 상한(7% 이내, 최대 ${maxAllowed}권)`;
+
+    const adjustBar = document.getElementById('cap-adjust-bar');
+    if (isOver && selCount > maxAllowed) {
+      adjustBar.classList.add('show');
+      document.getElementById('cap-adjust-text').textContent =
+        `현재 ${selCount}권 선택(${rate.toFixed(1)}%)으로 법정 상한(최대 ${maxAllowed}권)을 ${selCount - maxAllowed}권 초과했습니다.`;
+    } else {
+      adjustBar.classList.remove('show');
+    }
+  }
+
+  document.getElementById('btn-trim-to-cap').addEventListener('click', () => {
+    const totalBase = getTotalBaseCount();
+    const maxAllowed = Math.floor(totalBase * 0.07);
+    let kept = 0;
+
+    const priorityOrder = [...analyzedBooks].sort((a, b) => {
+      if (a.recommended !== b.recommended) return b.recommended - a.recommended;
+      if (a.loans !== b.loans) return a.loans - b.loans;
+      return (a.pubYear || 9999) - (b.pubYear || 9999);
+    });
+
+    const allowedIds = new Set();
+    for (const item of priorityOrder) {
+      if (item.checked && kept < maxAllowed) {
+        allowedIds.add(item.id);
+        kept++;
+      }
+    }
+
+    analyzedBooks.forEach(b => { b.checked = allowedIds.has(b.id); });
+    renderTable();
+    refreshKpis();
+  });
+
+  function renderTable() {
+    const kdc = document.getElementById('filter-kdc').value;
+    const mode = document.getElementById('filter-mode').value;
+    const q = document.getElementById('filter-search').value.trim().toLowerCase();
+
+    const tbody = document.getElementById('weeding-tbody');
+    tbody.innerHTML = '';
+
+    const list = analyzedBooks.filter(b => {
+      if (mode === 'REC' && !b.recommended) return false;
+      if (kdc !== 'ALL' && b.kdcMain !== kdc) return false;
+      if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:24px;">조건에 일치하는 도서가 없습니다.</td></tr>`;
+      return;
+    }
+
+    list.forEach(b => {
+      const tr = document.createElement('tr');
+      const pills = b.reasons.map(r => `<span class="tag-pill ${b.recommended ? 'rec' : ''}">${esc(r)}</span>`).join('');
+      tr.innerHTML = `
+        <td><input type="checkbox" class="row-chk" data-id="${esc(b.id)}" ${b.checked ? 'checked' : ''} /></td>
+        <td>${esc(b.id)}</td>
+        <td>${esc(b.kdc)}</td>
+        <td><strong>${esc(b.title)}</strong></td>
+        <td>${esc(b.author)} / ${esc(b.publisher)}</td>
+        <td>${b.pubYear ?? '미상'}</td>
+        <td>${b.loans}회</td>
+        <td>${esc(b.status)}</td>
+        <td>
+          <div>${pills}</div>
+          <input type="text" class="inline-reason-input" data-note-id="${esc(b.id)}" value="${esc(b.customNote)}" placeholder="사유서 보충 메모(선택)..." />
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.row-chk').forEach(chk => {
+      chk.addEventListener('change', e => {
+        const target = analyzedBooks.find(item => item.id === e.target.dataset.id);
+        if (target) {
+          target.checked = e.target.checked;
+          refreshKpis();
+        }
+      });
+    });
+
+    tbody.querySelectorAll('.inline-reason-input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        const target = analyzedBooks.find(item => item.id === e.target.dataset.noteId);
+        if (target) target.customNote = e.target.value;
+      });
+    });
+  }
+
+  ['filter-kdc', 'filter-mode'].forEach(id => document.getElementById(id).addEventListener('change', renderTable));
+  document.getElementById('filter-search').addEventListener('input', renderTable);
+  document.getElementById('crit-total-books').addEventListener('input', refreshKpis);
+
+  document.getElementById('chk-master').addEventListener('change', e => {
+    const val = e.target.checked;
+    document.querySelectorAll('.row-chk').forEach(chk => {
+      chk.checked = val;
+      const item = analyzedBooks.find(b => b.id === chk.dataset.id);
+      if (item) item.checked = val;
+    });
+    refreshKpis();
+  });
+
+  document.getElementById('btn-toggle-rec').addEventListener('click', () => {
+    const hasUnchecked = analyzedBooks.some(b => b.recommended && !b.checked);
+    analyzedBooks.forEach(b => { if (b.recommended) b.checked = hasUnchecked; });
+    renderTable();
+    refreshKpis();
+  });
+
+  function buildWeedingReportRows(selected) {
+    return selected.map((b, idx) => {
+      const reasonText = b.customNote.trim()
+        ? `${b.reasons.join('; ')} (${b.customNote.trim()})`
+        : b.reasons.join('; ');
+      return {
+        연번: idx + 1,
+        등록번호: b.id,
+        분류기호: b.kdc,
+        도서명: b.title,
+        저자: b.author,
+        출판사: b.publisher,
+        출판연도: b.pubYear ?? '미상',
+        누적대출: b.loans,
+        상태: b.status,
+        제적사유: reasonText
+      };
+    });
+  }
+
+  document.getElementById('btn-export-csv').addEventListener('click', () => {
+    const selected = analyzedBooks.filter(b => b.checked);
+    if (!selected.length) return alert('사유서로 출력할 도서를 1권 이상 선택하십시오.');
+    const rows = buildWeedingReportRows(selected);
+    const headers = Object.keys(rows[0]);
+    const csvLines = rows.map(r => headers.map(h => `"${String(r[h]).replace(/"/g, '""')}"`).join(','));
+    const csv = '\uFEFF' + [headers.join(','), ...csvLines].join('\n');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    triggerDownload(csv, `학교도서관_장서제적_사유서_${dateStr}.csv`, 'text/csv;charset=utf-8;');
+  });
+
+  document.getElementById('btn-export-xlsx').addEventListener('click', () => {
+    const selected = analyzedBooks.filter(b => b.checked);
+    if (!selected.length) return alert('사유서로 출력할 도서를 1권 이상 선택하십시오.');
+    const totalBase = getTotalBaseCount();
+    const rate = totalBase > 0 ? ((selected.length / totalBase) * 100).toFixed(1) : '0.0';
+    const baseYear = parseInt(document.getElementById('crit-year').value, 10) || 2026;
+
+    const wb = XLSX.utils.book_new();
+    const summarySheet = XLSX.utils.aoa_to_sheet([
+      ['학교도서관 장서 제적(폐기) 사유서 요약'],
+      ['작성일자', new Date().toISOString().slice(0, 10)],
+      ['판별 기준연도', `${baseYear}년`],
+      ['전체 기준 장서 수', `${totalBase}권`],
+      ['최종 제적 대상 권수', `${selected.length}권`],
+      ['예상 제적률(법정 상한 7.0%)', `${rate}%`]
+    ]);
+    const detailSheet = XLSX.utils.json_to_sheet(buildWeedingReportRows(selected));
+
+    XLSX.utils.book_append_sheet(wb, summarySheet, '제적요약');
+    XLSX.utils.book_append_sheet(wb, detailSheet, '제적사유서_목록');
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `학교도서관_장서제적_사유서_${dateStr}.xlsx`);
+  });
+
+  document.getElementById('btn-print-report').addEventListener('click', () => window.print());
+
+  function triggerDownload(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+
+</body>
+</html>
