@@ -235,7 +235,7 @@
 
     <div class="excel-sheet-toolbar">
       <div style="font-size:0.86rem; font-weight:900;">
-        📊 커스텀 장서 시트 — 셀을 클릭해 바로 입력하세요. <span class="tag-pill special">★ 특별도서(폐기 X)</span> 클릭 시 폐기 대상에서 제외됩니다.
+        📊 커스텀 장서 시트 — 셀을 클릭해 바로 입력하세요. <span class="tag-pill special">★ 폐기 X</span> 클릭 시 폐기 대상에서 제외됩니다.
       </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-sky btn-sm" id="btn-apply-sheet-analyze">시트 내용으로 재판별</button>
@@ -255,7 +255,7 @@
             <th>출판연도</th>
             <th>대출횟수</th>
             <th>상태</th>
-            <th>특별도서(폐기 X)</th>
+            <th>특별도서</th>
             <th style="width:56px;">삭제</th>
           </tr>
         </thead>
@@ -306,7 +306,7 @@
         </label>
       </div>
       <div>
-        <label class="field-label" for="crit-total-books">학교 전체 보유 장서 수 (법정 7% 계산 모수)</label>
+        <label class="field-label" for="crit-total-books">학교 전체 보유 장서 수 (법정 7% 계산용)</label>
         <input type="number" id="crit-total-books" placeholder="비워두면 시트 권수를 기준으로 계산" min="1" />
       </div>
     </div>
@@ -551,7 +551,7 @@
         <td><input type="text" class="excel-cell-input" data-field="status" data-uid="${b._uid}" value="${esc(b.status)}" placeholder="정상" /></td>
         <td style="text-align:center; padding: 4px 6px;">
           <button type="button" class="special-chip-btn ${b.isSpecial ? 'is-special' : ''}" data-special-uid="${b._uid}" aria-pressed="${b.isSpecial}">
-            ${b.isSpecial ? '★ 폐기 X (특별)' : '☆ 일반'}
+            ${b.isSpecial ? '★ 폐기 X' : '☆ 일반'}
           </button>
         </td>
         <td style="text-align:center; padding: 4px 6px;">
