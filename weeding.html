@@ -425,6 +425,7 @@
 
 <script src="common.js"></script>
 <script>
+(function() {
   let rawBooks = [];
   let analyzedBooks = [];
   let uidCounter = 1;
@@ -457,75 +458,11 @@
       rawBooks.push(createEmptyBookRow(i));
     }
     renderSheetGrid();
-    document.getElementById('result-section').style.display = 'none';
-    document.getElementById('validation-box').style.display = 'none';
+    const resSec = document.getElementById('result-section');
+    const valBox = document.getElementById('validation-box');
+    if (resSec) resSec.style.display = 'none';
+    if (valBox) valBox.style.display = 'none';
   }
-
-  const dropzone = document.getElementById('dropzone');
-  const fileInput = document.getElementById('file-input');
-
-  dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      fileInput.click();
-    }
-  });
-  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-  dropzone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropzone.classList.remove('dragover');
-    if (e.dataTransfer.files.length) parseUploadedFile(e.dataTransfer.files[0]);
-  });
-  fileInput.addEventListener('change', e => {
-    if (e.target.files.length) parseUploadedFile(e.target.files[0]);
-  });
-
-  function parseUploadedFile(file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-        if (!rows.length) {
-          showValidation(['파일에 분석할 데이터 행이 없습니다.'], true, '파일 오류');
-          return;
-        }
-        processRawRows(rows, file.name);
-      } catch (err) {
-        showValidation([`파일을 읽는 중 오류가 발생했습니다: ${err.message}`], true, '파일 파싱 실패');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  document.getElementById('btn-add-sheet-row').addEventListener('click', () => {
-    rawBooks.push(createEmptyBookRow(rawBooks.length + 1));
-    renderSheetGrid();
-    if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
-      analyzeBooks();
-    }
-  });
-
-  document.getElementById('btn-clear-sheet').addEventListener('click', () => {
-    initBlankSheet(5);
-  });
-
-  document.getElementById('btn-apply-sheet-analyze').addEventListener('click', () => {
-    if (!rawBooks.some(b => String(b.title || '').trim() !== '')) {
-      alert('판별할 도서명을 1권 이상 입력해 주십시오.');
-      return;
-    }
-    analyzeBooks();
-  });
-
-  document.getElementById('btn-download-template').addEventListener('click', () => {
-    const csv = '﻿등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태,특별도서
-';
-    triggerDownload(csv, '학교도서관_장서분석_표준양식.csv', 'text/csv;charset=utf-8;');
-  });
 
   function parseSpecialFlag(val) {
     if (typeof val === 'boolean') return val;
@@ -597,6 +534,7 @@
 
   function renderSheetGrid() {
     const tbody = document.getElementById('sheet-grid-tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     rawBooks.forEach((b, idx) => {
@@ -624,76 +562,11 @@
     });
   }
 
-  // 이벤트 위임으로 시트 셀 입력, 별표(특별도서) 토글, 행 삭제 처리
-  const sheetTbody = document.getElementById('sheet-grid-tbody');
-
-  sheetTbody.addEventListener('input', e => {
-    const inp = e.target.closest('.excel-cell-input');
-    if (!inp) return;
-    const uid = inp.dataset.uid;
-    const field = inp.dataset.field;
-    const book = rawBooks.find(item => item._uid === uid);
-    if (!book) return;
-
-    if (field === 'pubYear') {
-      const val = parseInt(inp.value, 10);
-      book.pubYear = isNaN(val) ? null : val;
-    } else if (field === 'loans') {
-      const val = Number(inp.value);
-      book.loans = isNaN(val) || val < 0 ? 0 : val;
-    } else {
-      book[field] = inp.value;
-      if (field === 'kdc') {
-        book.kdcMain = String(inp.value || '0').trim().charAt(0) || '0';
-      }
-    }
-  });
-
-  sheetTbody.addEventListener('change', e => {
-    const inp = e.target.closest('.excel-cell-input');
-    if (!inp) return;
-    if (inp.dataset.field === 'loans') {
-      const book = rawBooks.find(item => item._uid === inp.dataset.uid);
-      if (book) inp.value = book.loans;
-    }
-    if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
-      analyzeBooks();
-    }
-  });
-
-  sheetTbody.addEventListener('click', e => {
-    const specialBtn = e.target.closest('[data-special-uid]');
-    if (specialBtn) {
-      e.preventDefault();
-      const uid = specialBtn.dataset.specialUid;
-      const book = rawBooks.find(item => item._uid === uid);
-      if (!book) return;
-      book.isSpecial = !book.isSpecial;
-      renderSheetGrid();
-      if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
-        analyzeBooks();
-      }
-      return;
-    }
-
-    const delBtn = e.target.closest('[data-del-uid]');
-    if (delBtn) {
-      e.preventDefault();
-      const uid = delBtn.dataset.delUid;
-      rawBooks = rawBooks.filter(item => item._uid !== uid);
-      renderSheetGrid();
-      if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
-        analyzeBooks();
-      } else {
-        document.getElementById('result-section').style.display = 'none';
-      }
-    }
-  });
-
   function showValidation(list, isWarn, title) {
     const box = document.getElementById('validation-box');
     const titleEl = document.getElementById('validation-title');
     const ul = document.getElementById('validation-list');
+    if (!box || !titleEl || !ul) return;
 
     box.style.display = 'block';
     box.classList.toggle('warn', isWarn);
@@ -705,14 +578,6 @@
       ul.appendChild(li);
     });
   }
-
-  document.getElementById('btn-reanalyze').addEventListener('click', () => {
-    if (!rawBooks.some(b => String(b.title || '').trim() !== '')) {
-      alert('먼저 시트에 도서 데이터를 입력하거나 파일을 업로드해 주십시오.');
-      return;
-    }
-    analyzeBooks();
-  });
 
   function normKey(b) {
     return `${String(b.title || '').replace(/\s+/g, '').toLowerCase()}__${String(b.author || '').replace(/\s+/g, '').toLowerCase()}`;
@@ -862,30 +727,6 @@
     }
   }
 
-  document.getElementById('btn-trim-to-cap').addEventListener('click', () => {
-    const totalBase = getTotalBaseCount();
-    const maxAllowed = Math.floor(totalBase * 0.07);
-    let kept = 0;
-
-    const priorityOrder = [...analyzedBooks].sort((a, b) => {
-      if (a.recommended !== b.recommended) return b.recommended - a.recommended;
-      if (a.loans !== b.loans) return a.loans - b.loans;
-      return (a.pubYear || 9999) - (b.pubYear || 9999);
-    });
-
-    const allowedUids = new Set();
-    for (const item of priorityOrder) {
-      if (item.checked && !item.isSpecial && kept < maxAllowed) {
-        allowedUids.add(item._uid);
-        kept++;
-      }
-    }
-
-    analyzedBooks.forEach(b => { b.checked = allowedUids.has(b._uid); });
-    renderTable();
-    refreshKpis();
-  });
-
   function renderTable() {
     const kdc = document.getElementById('filter-kdc').value;
     const mode = document.getElementById('filter-mode').value;
@@ -937,61 +778,6 @@
     });
   }
 
-  // 판별 결과 테이블 이벤트 위임
-  const resultTbody = document.getElementById('weeding-tbody');
-
-  resultTbody.addEventListener('change', e => {
-    const chk = e.target.closest('.row-chk');
-    if (chk) {
-      const target = analyzedBooks.find(item => item._uid === chk.dataset.uid);
-      if (target) {
-        target.checked = chk.checked;
-        refreshKpis();
-      }
-    }
-  });
-
-  resultTbody.addEventListener('click', e => {
-    const btn = e.target.closest('[data-res-special-uid]');
-    if (!btn) return;
-    e.preventDefault();
-    const uid = btn.dataset.resSpecialUid;
-    const rawItem = rawBooks.find(item => item._uid === uid);
-    if (rawItem) {
-      rawItem.isSpecial = !rawItem.isSpecial;
-      renderSheetGrid();
-      analyzeBooks();
-    }
-  });
-
-  resultTbody.addEventListener('input', e => {
-    const inp = e.target.closest('.inline-reason-input');
-    if (!inp) return;
-    const target = analyzedBooks.find(item => item._uid === inp.dataset.noteUid);
-    if (target) target.customNote = inp.value;
-  });
-
-  ['filter-kdc', 'filter-mode'].forEach(id => document.getElementById(id).addEventListener('change', renderTable));
-  document.getElementById('filter-search').addEventListener('input', renderTable);
-  document.getElementById('crit-total-books').addEventListener('input', refreshKpis);
-
-  document.getElementById('chk-master').addEventListener('change', e => {
-    const val = e.target.checked;
-    document.querySelectorAll('.row-chk').forEach(chk => {
-      chk.checked = val;
-      const item = analyzedBooks.find(b => b._uid === chk.dataset.uid);
-      if (item) item.checked = val;
-    });
-    refreshKpis();
-  });
-
-  document.getElementById('btn-toggle-rec').addEventListener('click', () => {
-    const hasUnchecked = analyzedBooks.some(b => b.recommended && !b.checked);
-    analyzedBooks.forEach(b => { if (b.recommended) b.checked = hasUnchecked; });
-    renderTable();
-    refreshKpis();
-  });
-
   function buildWeedingReportRows(selected) {
     return selected.map((b, idx) => {
       const reasonText = b.customNote.trim()
@@ -1011,45 +797,6 @@
       };
     });
   }
-
-  document.getElementById('btn-export-csv').addEventListener('click', () => {
-    const selected = analyzedBooks.filter(b => b.checked);
-    if (!selected.length) return alert('사유서로 출력할 도서를 1권 이상 선택하십시오.');
-    const rows = buildWeedingReportRows(selected);
-    const headers = Object.keys(rows[0]);
-    const csvLines = rows.map(r => headers.map(h => `"${String(r[h]).replace(/"/g, '""')}"`).join(','));
-    const csv = '﻿' + [headers.join(','), ...csvLines].join('
-');
-    const dateStr = new Date().toISOString().slice(0, 10);
-    triggerDownload(csv, `학교도서관_장서제적_사유서_${dateStr}.csv`, 'text/csv;charset=utf-8;');
-  });
-
-  document.getElementById('btn-export-xlsx').addEventListener('click', () => {
-    const selected = analyzedBooks.filter(b => b.checked);
-    if (!selected.length) return alert('사유서로 출력할 도서를 1권 이상 선택하십시오.');
-    const totalBase = getTotalBaseCount();
-    const rate = totalBase > 0 ? ((selected.length / totalBase) * 100).toFixed(1) : '0.0';
-    const baseYear = parseInt(document.getElementById('crit-year').value, 10) || 2026;
-
-    const wb = XLSX.utils.book_new();
-    const summarySheet = XLSX.utils.aoa_to_sheet([
-      ['학교도서관 장서 제적(폐기) 사유서 요약'],
-      ['작성일자', new Date().toISOString().slice(0, 10)],
-      ['판별 기준연도', `${baseYear}년`],
-      ['전체 기준 장서 수', `${totalBase}권`],
-      ['최종 제적 대상 권수', `${selected.length}권`],
-      ['예상 제적률(법정 상한 7.0%)', `${rate}%`]
-    ]);
-    const detailSheet = XLSX.utils.json_to_sheet(buildWeedingReportRows(selected));
-
-    XLSX.utils.book_append_sheet(wb, summarySheet, '제적요약');
-    XLSX.utils.book_append_sheet(wb, detailSheet, '제적사유서_목록');
-
-    const dateStr = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `학교도서관_장서제적_사유서_${dateStr}.xlsx`);
-  });
-
-  document.getElementById('btn-print-report').addEventListener('click', () => window.print());
 
   function triggerDownload(content, filename, mime) {
     const blob = new Blob([content], { type: mime });
@@ -1071,8 +818,279 @@
       .replace(/"/g, '&quot;');
   }
 
-  // 초기 진입 시 미리 입력된 데이터 없이 빈 입력 시트 5행으로 시작
-  initBlankSheet(5);
+  document.addEventListener('DOMContentLoaded', () => {
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const sheetTbody = document.getElementById('sheet-grid-tbody');
+    const resultTbody = document.getElementById('weeding-tbody');
+
+    if (dropzone && fileInput) {
+      dropzone.addEventListener('click', (e) => {
+        if (e.target !== fileInput) fileInput.click();
+      });
+      dropzone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          fileInput.click();
+        }
+      });
+      dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+          parseUploadedFile(e.dataTransfer.files[0]);
+        }
+      });
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length) {
+          parseUploadedFile(e.target.files[0]);
+          e.target.value = '';
+        }
+      });
+    }
+
+    function parseUploadedFile(file) {
+      if (typeof XLSX === 'undefined') {
+        alert('엑셀/CSV 파서 라이브러리(XLSX)를 불러오지 못했습니다. 네트워크 연결을 확인해 주십시오.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const workbook = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+          if (!rows.length) {
+            showValidation(['파일에 분석할 데이터 행이 없습니다.'], true, '파일 오류');
+            return;
+          }
+          processRawRows(rows, file.name);
+        } catch (err) {
+          showValidation([`파일을 읽는 중 오류가 발생했습니다: ${err.message}`], true, '파일 파싱 실패');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    document.getElementById('btn-add-sheet-row').addEventListener('click', () => {
+      rawBooks.push(createEmptyBookRow(rawBooks.length + 1));
+      renderSheetGrid();
+      if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
+        analyzeBooks();
+      }
+    });
+
+    document.getElementById('btn-clear-sheet').addEventListener('click', () => {
+      initBlankSheet(5);
+    });
+
+    document.getElementById('btn-apply-sheet-analyze').addEventListener('click', () => {
+      if (!rawBooks.some(b => String(b.title || '').trim() !== '')) {
+        alert('판별할 도서명을 1권 이상 입력해 주십시오.');
+        return;
+      }
+      analyzeBooks();
+    });
+
+    document.getElementById('btn-download-template').addEventListener('click', () => {
+      const csv = '\uFEFF등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태,특별도서\n';
+      triggerDownload(csv, '학교도서관_장서분석_표준양식.csv', 'text/csv;charset=utf-8;');
+    });
+
+    document.getElementById('btn-reanalyze').addEventListener('click', () => {
+      if (!rawBooks.some(b => String(b.title || '').trim() !== '')) {
+        alert('먼저 시트에 도서 데이터를 입력하거나 파일을 업로드해 주십시오.');
+        return;
+      }
+      analyzeBooks();
+    });
+
+    if (sheetTbody) {
+      sheetTbody.addEventListener('input', (e) => {
+        const inp = e.target.closest('.excel-cell-input');
+        if (!inp) return;
+        const uid = inp.dataset.uid;
+        const field = inp.dataset.field;
+        const book = rawBooks.find(item => item._uid === uid);
+        if (!book) return;
+
+        if (field === 'pubYear') {
+          const val = parseInt(inp.value, 10);
+          book.pubYear = isNaN(val) ? null : val;
+        } else if (field === 'loans') {
+          const val = Number(inp.value);
+          book.loans = isNaN(val) || val < 0 ? 0 : val;
+        } else {
+          book[field] = inp.value;
+          if (field === 'kdc') {
+            book.kdcMain = String(inp.value || '0').trim().charAt(0) || '0';
+          }
+        }
+      });
+
+      sheetTbody.addEventListener('change', (e) => {
+        const inp = e.target.closest('.excel-cell-input');
+        if (!inp) return;
+        if (inp.dataset.field === 'loans') {
+          const book = rawBooks.find(item => item._uid === inp.dataset.uid);
+          if (book) inp.value = book.loans;
+        }
+        if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
+          analyzeBooks();
+        }
+      });
+
+      sheetTbody.addEventListener('click', (e) => {
+        const specialBtn = e.target.closest('[data-special-uid]');
+        if (specialBtn) {
+          e.preventDefault();
+          const uid = specialBtn.dataset.specialUid;
+          const book = rawBooks.find(item => item._uid === uid);
+          if (!book) return;
+          book.isSpecial = !book.isSpecial;
+          renderSheetGrid();
+          if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
+            analyzeBooks();
+          }
+          return;
+        }
+
+        const delBtn = e.target.closest('[data-del-uid]');
+        if (delBtn) {
+          e.preventDefault();
+          const uid = delBtn.dataset.delUid;
+          rawBooks = rawBooks.filter(item => item._uid !== uid);
+          renderSheetGrid();
+          if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
+            analyzeBooks();
+          } else {
+            document.getElementById('result-section').style.display = 'none';
+          }
+        }
+      });
+    }
+
+    if (resultTbody) {
+      resultTbody.addEventListener('change', (e) => {
+        const chk = e.target.closest('.row-chk');
+        if (chk) {
+          const target = analyzedBooks.find(item => item._uid === chk.dataset.uid);
+          if (target) {
+            target.checked = chk.checked;
+            refreshKpis();
+          }
+        }
+      });
+
+      resultTbody.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-res-special-uid]');
+        if (!btn) return;
+        e.preventDefault();
+        const uid = btn.dataset.resSpecialUid;
+        const rawItem = rawBooks.find(item => item._uid === uid);
+        if (rawItem) {
+          rawItem.isSpecial = !rawItem.isSpecial;
+          renderSheetGrid();
+          analyzeBooks();
+        }
+      });
+
+      resultTbody.addEventListener('input', (e) => {
+        const inp = e.target.closest('.inline-reason-input');
+        if (!inp) return;
+        const target = analyzedBooks.find(item => item._uid === inp.dataset.noteUid);
+        if (target) target.customNote = inp.value;
+      });
+    }
+
+    document.getElementById('btn-trim-to-cap').addEventListener('click', () => {
+      const totalBase = getTotalBaseCount();
+      const maxAllowed = Math.floor(totalBase * 0.07);
+      let kept = 0;
+
+      const priorityOrder = [...analyzedBooks].sort((a, b) => {
+        if (a.recommended !== b.recommended) return b.recommended - a.recommended;
+        if (a.loans !== b.loans) return a.loans - b.loans;
+        return (a.pubYear || 9999) - (b.pubYear || 9999);
+      });
+
+      const allowedUids = new Set();
+      for (const item of priorityOrder) {
+        if (item.checked && !item.isSpecial && kept < maxAllowed) {
+          allowedUids.add(item._uid);
+          kept++;
+        }
+      }
+
+      analyzedBooks.forEach(b => { b.checked = allowedUids.has(b._uid); });
+      renderTable();
+      refreshKpis();
+    });
+
+    ['filter-kdc', 'filter-mode'].forEach(id => document.getElementById(id).addEventListener('change', renderTable));
+    document.getElementById('filter-search').addEventListener('input', renderTable);
+    document.getElementById('crit-total-books').addEventListener('input', refreshKpis);
+
+    document.getElementById('chk-master').addEventListener('change', (e) => {
+      const val = e.target.checked;
+      document.querySelectorAll('.row-chk').forEach(chk => {
+        chk.checked = val;
+        const item = analyzedBooks.find(b => b._uid === chk.dataset.uid);
+        if (item) item.checked = val;
+      });
+      refreshKpis();
+    });
+
+    document.getElementById('btn-toggle-rec').addEventListener('click', () => {
+      const hasUnchecked = analyzedBooks.some(b => b.recommended && !b.checked);
+      analyzedBooks.forEach(b => { if (b.recommended) b.checked = hasUnchecked; });
+      renderTable();
+      refreshKpis();
+    });
+
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
+      const selected = analyzedBooks.filter(b => b.checked);
+      if (!selected.length) return alert('사유서로 출력할 도서를 1권 이상 선택하십시오.');
+      const rows = buildWeedingReportRows(selected);
+      const headers = Object.keys(rows[0]);
+      const csvLines = rows.map(r => headers.map(h => `"${String(r[h]).replace(/"/g, '""')}"`).join(','));
+      const csv = '\uFEFF' + [headers.join(','), ...csvLines].join('\n');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      triggerDownload(csv, `학교도서관_장서제적_사유서_${dateStr}.csv`, 'text/csv;charset=utf-8;');
+    });
+
+    document.getElementById('btn-export-xlsx').addEventListener('click', () => {
+      const selected = analyzedBooks.filter(b => b.checked);
+      if (!selected.length) return alert('사유서로 출력할 도서를 1권 이상 선택하십시오.');
+      const totalBase = getTotalBaseCount();
+      const rate = totalBase > 0 ? ((selected.length / totalBase) * 100).toFixed(1) : '0.0';
+      const baseYear = parseInt(document.getElementById('crit-year').value, 10) || 2026;
+
+      const wb = XLSX.utils.book_new();
+      const summarySheet = XLSX.utils.aoa_to_sheet([
+        ['학교도서관 장서 제적(폐기) 사유서 요약'],
+        ['작성일자', new Date().toISOString().slice(0, 10)],
+        ['판별 기준연도', `${baseYear}년`],
+        ['전체 기준 장서 수', `${totalBase}권`],
+        ['최종 제적 대상 권수', `${selected.length}권`],
+        ['예상 제적률(법정 상한 7.0%)', `${rate}%`]
+      ]);
+      const detailSheet = XLSX.utils.json_to_sheet(buildWeedingReportRows(selected));
+
+      XLSX.utils.book_append_sheet(wb, summarySheet, '제적요약');
+      XLSX.utils.book_append_sheet(wb, detailSheet, '제적사유서_목록');
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `학교도서관_장서제적_사유서_${dateStr}.xlsx`);
+    });
+
+    document.getElementById('btn-print-report').addEventListener('click', () => window.print());
+
+    initBlankSheet(5);
+  });
+})();
 </script>
 
 </body>
