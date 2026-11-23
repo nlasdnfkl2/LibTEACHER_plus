@@ -436,6 +436,8 @@
   const citeType = document.getElementById('cite-type');
   const citeStyle = document.getElementById('cite-style');
   const citeQuery = document.getElementById('cite-query');
+  const metaTitleInput = document.getElementById('meta-title');
+  const metaAuthorInput = document.getElementById('meta-author');
   const citeNotice = document.getElementById('cite-notice');
   const candidateBox = document.getElementById('candidate-box');
   const metaIds = ['meta-author', 'meta-year', 'meta-title', 'meta-publisher', 'meta-detail', 'meta-url'];
@@ -468,8 +470,8 @@
     candidateBox.innerHTML = '';
 
     if (t === 'book') {
-      qLabel.textContent = '도서명 또는 ISBN 입력';
-      citeQuery.placeholder = '예: 학교도서관 운영 또는 9788976781857';
+      qLabel.textContent = '도서명, 저자 또는 ISBN 입력';
+      citeQuery.placeholder = '예: 제 인생에 답이 없어요, 선바 또는 97889...';
       pLabel.textContent = '출판사';
       dLabel.textContent = '발행지 (선택)';
     } else if (t === 'journal') {
@@ -486,8 +488,102 @@
     updateCitationPreview();
   });
 
-  document.getElementById('btn-search-meta').addEventListener('click', searchMetadata);
-  citeQuery.addEventListener('keydown', e => { if (e.key === 'Enter') searchMetadata(); });
+  // 검색창 및 도서명/저자 입력창 모두 Enter 키로 메타데이터 검색 가능
+  document.getElementById('btn-search-meta').addEventListener('click', () => searchMetadata());
+  citeQuery.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      searchMetadata(citeQuery.value.trim());
+    }
+  });
+  metaTitleInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const combined = [metaTitleInput.value.trim(), metaAuthorInput.value.trim()].filter(Boolean).join(' ');
+      if (combined) citeQuery.value = combined;
+      searchMetadata(combined);
+    }
+  });
+  metaAuthorInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const combined = [metaTitleInput.value.trim(), metaAuthorInput.value.trim()].filter(Boolean).join(' ');
+      if (combined) citeQuery.value = combined;
+      searchMetadata(combined);
+    }
+  });
+
+  function normalizeText(str) {
+    return String(str || '')
+      .toLowerCase()
+      .replace(/[^0-9a-z가-힣\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function compactText(str) {
+    return String(str || '')
+      .toLowerCase()
+      .replace(/[^0-9a-z가-힣]/g, '');
+  }
+
+  function getBigrams(str) {
+    const s = compactText(str);
+    if (s.length < 2) return s ? [s] : [];
+    const set = new Set();
+    for (let i = 0; i < s.length - 1; i++) {
+      set.add(s.slice(i, i + 2));
+    }
+    return Array.from(set);
+  }
+
+  function computeSimilarityScore(queryStr, rec) {
+    const qNorm = normalizeText(queryStr);
+    const qComp = compactText(queryStr);
+    if (!qComp) return 0;
+
+    const titleNorm = normalizeText(rec.title);
+    const titleComp = compactText(rec.title);
+    const authorNorm = normalizeText(rec.author);
+    const authorComp = compactText(rec.author);
+    const pubComp = compactText(rec.publisher);
+
+    let score = 0;
+
+    if (titleComp === qComp) score += 65;
+    else if (titleComp.includes(qComp) && qComp.length >= 2) score += 48;
+    else if (qComp.includes(titleComp) && titleComp.length >= 2) score += 42;
+
+    if (authorComp && (authorComp.includes(qComp) || qComp.includes(authorComp))) {
+      score += 25;
+    }
+
+    const qTokens = qNorm.split(' ').filter(Boolean);
+    const targetTokens = `${titleNorm} ${authorNorm}`.split(' ').filter(Boolean);
+    if (qTokens.length && targetTokens.length) {
+      let matched = 0;
+      qTokens.forEach(qt => {
+        const qtComp = compactText(qt);
+        if (targetTokens.some(tt => tt.includes(qt) || qt.includes(tt) || compactText(tt).includes(qtComp))) {
+          matched += 1;
+        }
+      });
+      score += (matched / qTokens.length) * 30;
+    }
+
+    const qBg = getBigrams(qComp);
+    const tBg = getBigrams(`${titleComp}${authorComp}`);
+    if (qBg.length && tBg.length) {
+      const tSet = new Set(tBg);
+      const inter = qBg.filter(bg => tSet.has(bg)).length;
+      const dice = (2 * inter) / (qBg.length + tBg.length);
+      score += dice * 25;
+    }
+
+    if (pubComp && pubComp.includes(qComp)) score += 5;
+
+    return Math.min(99, Math.max(5, Math.round(score)));
+  }
 
   function applyCandidateRecord(rec) {
     document.getElementById('meta-author').value = rec.author || '';
@@ -499,45 +595,127 @@
     updateCitationPreview();
   }
 
-  function renderCandidates(list) {
-    if (!list.length) {
+  function renderCandidates(rankedList) {
+    if (!rankedList.length) {
       candidateBox.style.display = 'none';
       candidateBox.innerHTML = '';
       return;
     }
     candidateBox.style.display = 'block';
-    candidateBox.innerHTML = `<div style="font-size:0.82rem; font-weight:900;">조회 결과 ${list.length}건 — 원하는 자료를 선택해 입력란에 반영하세요:</div>`;
+    candidateBox.innerHTML = `<div style="font-size:0.84rem; font-weight:900;">유사도 순위 검색 결과 ${rankedList.length}건 — 원하는 자료를 클릭해 입력란에 반영하세요:</div>`;
 
-    list.forEach(rec => {
+    rankedList.forEach((entry, idx) => {
+      const rec = entry.item;
+      const score = entry.score;
       const row = document.createElement('div');
       row.className = 'candidate-item';
       row.innerHTML = `
-        <div>
-          <div>${esc(rec.title || '제목 미상')} <span style="color:var(--ink-muted);">(${esc(rec.year || '연도 미상')})</span></div>
-          <div style="font-size:0.78rem; color:var(--ink-muted);">${esc(rec.author || '저자 미상')} · ${esc(rec.publisher || '')}</div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="brutal-badge ${idx === 0 ? 'green' : ''}" style="padding:2px 7px; font-size:0.74rem;">#${idx + 1} · 유사도 ${score}%</span>
+            <span>${esc(rec.title || '제목 미상')}</span>
+            <span style="color:var(--ink-muted);">(${esc(rec.year || '연도 미상')})</span>
+          </div>
+          <div style="font-size:0.78rem; color:var(--ink-muted); margin-top:3px;">
+            저자: ${esc(rec.author || '저자 미상')} · 출판/매체: ${esc(rec.publisher || '미상')}
+          </div>
         </div>
-        <button type="button" class="btn btn-yellow btn-sm">선택</button>
+        <button type="button" class="btn btn-yellow btn-sm btn-shine">이 자료 선택</button>
       `;
       row.querySelector('button').addEventListener('click', () => {
         applyCandidateRecord(rec);
-        notifyCite(`「${rec.title}」 서지 정보를 반영했습니다.`);
+        notifyCite(`[#${idx + 1} · 유사도 ${score}%] 「${rec.title}」 메타데이터를 입력했습니다.`);
       });
       candidateBox.appendChild(row);
     });
   }
 
-  async function searchMetadata() {
+  async function fetchBookCandidates(queryStr) {
+    const isbn = queryStr.replace(/[^0-9Xx]/g, '');
+    const results = [];
+    const seen = new Set();
+
+    function pushUnique(rec) {
+      const key = `${compactText(rec.title)}__${compactText(rec.author)}__${rec.year || ''}`;
+      if (!rec.title || seen.has(key)) return;
+      seen.add(key);
+      results.push(rec);
+    }
+
+    if (isbn.length === 10 || isbn.length === 13) {
+      try {
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=8`);
+        const json = await res.json();
+        (json.items || []).forEach(it => {
+          const info = it.volumeInfo || {};
+          pushUnique({
+            author: (info.authors || []).join(', '),
+            year: (info.publishedDate || '').slice(0, 4),
+            title: info.title || '',
+            publisher: info.publisher || '',
+            detail: '',
+            url: info.infoLink || ''
+          });
+        });
+      } catch {}
+    }
+
+    const queries = Array.from(new Set([
+      queryStr,
+      `"${queryStr}"`,
+      compactText(queryStr) !== queryStr.toLowerCase() ? compactText(queryStr) : ''
+    ].filter(Boolean))).slice(0, 2);
+
+    await Promise.all(queries.map(async qTerm => {
+      try {
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(qTerm)}&maxResults=10&printType=books`);
+        const json = await res.json();
+        (json.items || []).forEach(it => {
+          const info = it.volumeInfo || {};
+          pushUnique({
+            author: (info.authors || []).join(', '),
+            year: (info.publishedDate || '').slice(0, 4),
+            title: info.title || '',
+            publisher: info.publisher || '',
+            detail: '',
+            url: info.infoLink || ''
+          });
+        });
+      } catch {}
+    }));
+
+    if (results.length < 3) {
+      try {
+        const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(queryStr)}&limit=8`);
+        const olJson = await olRes.json();
+        (olJson.docs || []).forEach(doc => {
+          pushUnique({
+            author: (doc.author_name || []).join(', '),
+            year: doc.first_publish_year ? String(doc.first_publish_year) : '',
+            title: doc.title || '',
+            publisher: Array.isArray(doc.publisher) ? doc.publisher[0] : (doc.publisher || ''),
+            detail: '',
+            url: doc.key ? `https://openlibrary.org${doc.key}` : ''
+          });
+        });
+      } catch {}
+    }
+
+    return results;
+  }
+
+  async function searchMetadata(overrideQuery) {
     const t = citeType.value;
-    const q = citeQuery.value.trim();
+    const q = (typeof overrideQuery === 'string' ? overrideQuery : citeQuery.value).trim();
     candidateBox.style.display = 'none';
     candidateBox.innerHTML = '';
 
     if (!q) {
-      notifyCite('조회할 도서명, DOI 또는 URL을 입력하십시오.');
+      notifyCite('조회할 도서명, 저자, DOI 또는 URL을 입력하십시오.');
       return;
     }
 
-    notifyCite('서지 데이터베이스에서 정보를 조회하고 있습니다...');
+    notifyCite(`「${q}」 관련 서지 정보를 조회하고 유사도 순으로 정렬하는 중입니다...`);
 
     if (t === 'web') {
       parseWebLink(q);
@@ -546,26 +724,15 @@
 
     if (t === 'book') {
       try {
-        const isbn = q.replace(/[^0-9Xx]/g, '');
-        const param = (isbn.length === 10 || isbn.length === 13) ? `isbn:${isbn}` : encodeURIComponent(q);
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${param}&maxResults=5`);
-        const json = await res.json();
+        const rawCandidates = await fetchBookCandidates(q);
+        if (rawCandidates.length) {
+          const ranked = rawCandidates
+            .map(item => ({ item, score: computeSimilarityScore(q, item) }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 8);
 
-        if (json.items && json.items.length) {
-          const candidates = json.items.map(it => {
-            const info = it.volumeInfo || {};
-            return {
-              author: (info.authors || []).join(', '),
-              year: (info.publishedDate || '').slice(0, 4),
-              title: info.title || '',
-              publisher: info.publisher || '',
-              detail: '',
-              url: info.infoLink || ''
-            };
-          });
-          applyCandidateRecord(candidates[0]);
-          if (candidates.length > 1) renderCandidates(candidates);
-          notifyCite(`도서 서지 정보를 불러왔습니다: 「${candidates[0].title}」`);
+          renderCandidates(ranked);
+          notifyCite(`유사도 순위 목록 ${ranked.length}건을 찾았습니다. 목록에서 원하는 도서를 클릭해 선택하세요.`);
         } else {
           notifyCite('검색 결과가 없습니다. 아래 입력칸에 서지 정보를 직접 입력해 주십시오.');
         }
@@ -580,14 +747,14 @@
         const isDoi = /^10\.\d{4,9}\/[-._;()/:A-Z0-9]+$/i.test(q);
         const url = isDoi
           ? `https://api.crossref.org/works/${encodeURIComponent(q)}`
-          : `https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=5`;
+          : `https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=8`;
         const res = await fetch(url);
         if (!res.ok) throw new Error();
         const json = await res.json();
         const rawItems = isDoi ? (json.message ? [json.message] : []) : (json.message?.items || []);
 
         if (rawItems.length) {
-          const candidates = rawItems.map(item => {
+          const mapped = rawItems.map(item => {
             const authors = (item.author || []).map(a =>
               a.family && a.given ? `${a.family}, ${a.given}` : (a.family || a.name || '')
             ).join(', ');
@@ -606,9 +773,13 @@
               url: item.DOI ? `https://doi.org/${item.DOI}` : ''
             };
           });
-          applyCandidateRecord(candidates[0]);
-          if (candidates.length > 1) renderCandidates(candidates);
-          notifyCite(`학술논문 정보를 불러왔습니다: 「${candidates[0].title}」`);
+
+          const ranked = mapped
+            .map(item => ({ item, score: isDoi ? 99 : computeSimilarityScore(q, item) }))
+            .sort((a, b) => b.score - a.score);
+
+          renderCandidates(ranked);
+          notifyCite(`논문 검색 결과 ${ranked.length}건을 유사도 순으로 표시했습니다. 선택 시 입력란에 반영됩니다.`);
         } else {
           notifyCite('일치하는 논문 정보가 없습니다. 아래에 직접 입력해 주십시오.');
         }
@@ -624,14 +795,16 @@
       const u = new URL(normalized);
       const now = new Date();
       const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
-      document.getElementById('meta-url').value = u.href;
-      document.getElementById('meta-publisher').value = u.hostname.replace(/^www\./, '');
-      document.getElementById('meta-detail').value = dateStr;
-      if (!document.getElementById('meta-year').value) {
-        document.getElementById('meta-year').value = String(now.getFullYear());
-      }
-      notifyCite('URL 도메인 및 접속일자를 자동 설정했습니다. 웹문서 제목과 작성자를 입력하십시오.');
-      updateCitationPreview();
+      const rec = {
+        author: document.getElementById('meta-author').value.trim(),
+        year: document.getElementById('meta-year').value.trim() || String(now.getFullYear()),
+        title: document.getElementById('meta-title').value.trim() || u.hostname.replace(/^www\./, ''),
+        publisher: u.hostname.replace(/^www\./, ''),
+        detail: dateStr,
+        url: u.href
+      };
+      renderCandidates([{ item: rec, score: 95 }]);
+      notifyCite('URL 정보를 추출했습니다. 아래 후보를 클릭해 반영하거나 제목/저자를 수정하세요.');
     } catch {
       notifyCite('유효하지 않은 URL 형식입니다. 주소를 다시 확인하십시오.');
     }
@@ -728,8 +901,7 @@
 
   document.getElementById('btn-copy-all').addEventListener('click', () => {
     if (!bibItems.length) return;
-    navigator.clipboard.writeText(bibItems.join('
-')).then(() => {
+    navigator.clipboard.writeText(bibItems.join('\n')).then(() => {
       notifyCite(`총 ${bibItems.length}건의 참고문헌 목록을 클립보드에 복사했습니다.`);
     });
   });

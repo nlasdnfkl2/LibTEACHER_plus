@@ -10,12 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: var(--bg);
       color: var(--black);
@@ -26,346 +21,158 @@
       position: relative;
       overflow-x: hidden;
     }
-
-    .container {
-      max-width: 1120px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
-    }
-
+    .container { max-width: 1180px; margin: 0 auto; position: relative; z-index: 1; }
     .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding-bottom: 16px;
-      margin-bottom: 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px; padding-bottom: 16px; margin-bottom: 24px;
       border-bottom: var(--border-thick);
     }
-
-    .topbar-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .brand-chip {
-      background: var(--black);
-      color: var(--yellow);
-      font-weight: 900;
-      font-size: 0.92rem;
-      padding: 4px 10px;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
+    .topbar-brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .brand-chip { background: var(--black); color: var(--yellow); font-weight: 900; font-size: 0.92rem; padding: 4px 10px; }
+    .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
     .nav-link-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
-      border: var(--border);
-      background: #ffffff;
-      color: var(--black);
-      text-decoration: none;
-      font-size: 0.88rem;
-      font-weight: 900;
-      box-shadow: var(--shadow-sm);
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+      border: var(--border); background: #ffffff; color: var(--black); text-decoration: none;
+      font-size: 0.88rem; font-weight: 900; box-shadow: var(--shadow-sm);
     }
-
     .nav-link-btn.active { background: var(--yellow); }
     .nav-link-btn.alt { background: var(--cyan); }
-
     .hero-header {
-      background: var(--bg-card);
-      border: var(--border-thick);
-      box-shadow: var(--shadow-lg);
-      padding: 24px 28px;
-      margin-bottom: 24px;
+      background: var(--bg-card); border: var(--border-thick); box-shadow: var(--shadow-lg);
+      padding: 24px 28px; margin-bottom: 24px;
     }
-
-    .hero-badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
+    .hero-badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
     .brutal-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      font-size: 0.78rem;
-      font-weight: 800;
-      border: var(--border);
-      background: var(--yellow);
-      color: var(--black);
+      display: inline-block; padding: 4px 10px; font-size: 0.78rem; font-weight: 800;
+      border: var(--border); background: var(--yellow); color: var(--black);
     }
-
     .brutal-badge.sky { background: var(--cyan); }
     .brutal-badge.green { background: var(--green); }
-
-    .hero-title {
-      font-size: clamp(1.5rem, 3vw, 2.1rem);
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      line-height: 1.2;
-      margin-bottom: 6px;
-    }
-
-    .hero-desc {
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--ink-muted);
-    }
-
+    .brutal-badge.pink { background: var(--pink); color: #ffffff; }
+    .hero-title { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 900; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 6px; }
+    .hero-desc { font-size: 0.95rem; font-weight: 500; color: var(--ink-muted); }
     .brutal-card {
-      background: var(--bg-card);
-      border: var(--border-thick);
-      box-shadow: var(--shadow-lg);
-      padding: 24px 28px;
-      margin-bottom: 24px;
+      background: var(--bg-card); border: var(--border-thick); box-shadow: var(--shadow-lg);
+      padding: 24px 28px; margin-bottom: 24px;
     }
-
     .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding-bottom: 14px;
-      margin-bottom: 20px;
-      border-bottom: var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 10px; padding-bottom: 14px; margin-bottom: 20px; border-bottom: var(--border);
     }
-
-    .card-title {
-      font-size: 1.18rem;
-      font-weight: 900;
-      letter-spacing: -0.02em;
-    }
-
+    .card-title { font-size: 1.18rem; font-weight: 900; letter-spacing: -0.02em; }
     .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
     .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-
-    @media (max-width: 860px) {
-      .grid-2, .grid-4 { grid-template-columns: 1fr; }
+    @media (max-width: 860px) { .grid-2, .grid-4 { grid-template-columns: 1fr; } }
+    label.field-label { display: block; font-size: 0.85rem; font-weight: 800; margin-bottom: 6px; }
+    input[type="text"], input[type="number"], select {
+      width: 100%; padding: 11px 14px; border: var(--border); background: var(--bg-subtle);
+      color: var(--black); font-family: inherit; font-size: 0.95rem; font-weight: 600; border-radius: 0;
     }
-
-    label.field-label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 800;
-      margin-bottom: 6px;
-    }
-
-    input[type="text"],
-    input[type="number"],
-    select {
-      width: 100%;
-      padding: 11px 14px;
-      border: var(--border);
-      background: var(--bg-subtle);
-      color: var(--black);
-      font-family: inherit;
-      font-size: 0.95rem;
-      font-weight: 600;
-      border-radius: 0;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      background: #ffffff;
-      box-shadow: var(--shadow-sm);
-    }
-
+    input:focus, select:focus { outline: none; background: #ffffff; box-shadow: var(--shadow-sm); }
     .inline-reason-input {
-      width: 100%;
-      min-width: 180px;
-      padding: 6px 9px !important;
-      font-size: 0.84rem !important;
-      margin-top: 6px;
-      background: #ffffff !important;
+      width: 100%; min-width: 160px; padding: 6px 9px !important; font-size: 0.82rem !important;
+      margin-top: 6px; background: #ffffff !important;
     }
-
-    .check-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.92rem;
-      font-weight: 700;
-      margin-top: 10px;
-      cursor: pointer;
-    }
-
-    .check-label input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
-      accent-color: var(--black);
-      cursor: pointer;
-    }
-
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 18px;
-    }
-
+    .check-label { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; font-weight: 700; margin-top: 10px; cursor: pointer; }
+    .check-label input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--black); cursor: pointer; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 11px 18px;
-      border: var(--border);
-      box-shadow: var(--shadow-md);
-      background: var(--bg-card);
-      color: var(--black);
-      font-family: inherit;
-      font-size: 0.92rem;
-      font-weight: 800;
-      cursor: pointer;
-      border-radius: 0;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 18px;
+      border: var(--border); box-shadow: var(--shadow-md); background: var(--bg-card); color: var(--black);
+      font-family: inherit; font-size: 0.92rem; font-weight: 800; cursor: pointer; border-radius: 0;
       transition: transform 0.08s ease, box-shadow 0.08s ease;
     }
-
     .btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0px #111111; }
     .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0px #111111; }
-
     .btn-yellow { background: var(--yellow); }
     .btn-sky { background: var(--cyan); }
     .btn-green { background: var(--green); }
     .btn-pink { background: var(--pink); color: #ffffff; }
     .btn-sm { padding: 7px 12px; font-size: 0.82rem; box-shadow: var(--shadow-sm); }
-
     .dropzone {
-      border: 3px dashed var(--black);
-      background: var(--bg-subtle);
-      padding: 30px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: background-color 0.12s ease;
+      border: 3px dashed var(--black); background: var(--bg-subtle); padding: 24px 20px;
+      text-align: center; cursor: pointer; transition: background-color 0.12s ease;
     }
-
     .dropzone:hover, .dropzone.dragover { background: var(--yellow); }
-    .dropzone-main { font-size: 1.05rem; font-weight: 900; margin-bottom: 6px; }
-    .dropzone-sub { font-size: 0.85rem; font-weight: 600; color: var(--ink-muted); }
+    .dropzone-main { font-size: 1.02rem; font-weight: 900; margin-bottom: 4px; }
+    .dropzone-sub { font-size: 0.84rem; font-weight: 600; color: var(--ink-muted); }
+
+    /* 커스텀 엑셀 스타일 직접 입력 시트 */
+    .excel-sheet-toolbar {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+      margin-top: 20px; margin-bottom: 10px; padding: 10px 14px; background: var(--bg-subtle); border: var(--border);
+    }
+    .excel-sheet-wrap { border: var(--border-thick); box-shadow: var(--shadow-md); overflow-x: auto; background: #ffffff; }
+    .excel-grid { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    .excel-grid th {
+      background: var(--black); color: #ffffff; font-weight: 800; padding: 9px 10px;
+      border-right: 1px solid #333333; white-space: nowrap; text-align: left;
+    }
+    .excel-grid td { padding: 0; border: 1px solid var(--black); background: #ffffff; min-width: 82px; }
+    .excel-grid tr:hover td { background: #fffdf5; }
+    .excel-grid td.row-num-cell {
+      padding: 6px 8px; background: var(--bg-subtle); font-weight: 900; text-align: center;
+      color: var(--ink-muted); min-width: 44px;
+    }
+    .excel-cell-input {
+      width: 100% !important; border: none !important; box-shadow: none !important;
+      background: transparent !important; padding: 8px 9px !important; font-size: 0.85rem !important; font-weight: 700 !important;
+    }
+    .excel-cell-input:focus {
+      background: var(--yellow) !important; outline: 2px solid var(--black) !important; outline-offset: -2px;
+    }
+    .special-chip-btn {
+      display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border: 2px solid var(--black);
+      background: var(--bg-subtle); color: var(--black); font-size: 0.76rem; font-weight: 900; cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+    .special-chip-btn.is-special { background: var(--cyan); }
 
     .alert-box {
-      margin-top: 18px;
-      padding: 16px 18px;
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      background: var(--green);
-      display: none;
+      margin-top: 18px; padding: 16px 18px; border: var(--border); box-shadow: var(--shadow-sm);
+      background: var(--green); display: none;
     }
-
     .alert-box.warn { background: var(--pink); color: #ffffff; }
     .alert-box-title { font-weight: 900; font-size: 0.95rem; margin-bottom: 6px; }
     .alert-box ul { margin-left: 20px; font-size: 0.86rem; font-weight: 600; }
 
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin-bottom: 20px;
-    }
-
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 20px; }
     @media (max-width: 860px) { .kpi-grid { grid-template-columns: 1fr; } }
-
-    .kpi-box {
-      border: var(--border);
-      box-shadow: var(--shadow-md);
-      padding: 18px 20px;
-      background: var(--bg-subtle);
-    }
-
+    .kpi-box { border: var(--border); box-shadow: var(--shadow-md); padding: 18px 20px; background: var(--bg-subtle); }
     .kpi-box.highlight-yellow { background: var(--yellow); }
     .kpi-box.highlight-green { background: var(--green); }
     .kpi-box.highlight-pink { background: var(--pink); color: #ffffff; }
-
     .kpi-label { font-size: 0.82rem; font-weight: 800; margin-bottom: 6px; }
     .kpi-num { font-size: 2rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.15; }
     .kpi-foot { font-size: 0.82rem; font-weight: 700; margin-top: 8px; }
 
     .cap-adjust-bar {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding: 14px 18px;
-      margin-bottom: 20px;
-      border: var(--border);
-      box-shadow: var(--shadow-sm);
-      background: #fff3cd;
+      display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      padding: 14px 18px; margin-bottom: 20px; border: var(--border); box-shadow: var(--shadow-sm); background: #fff3cd;
     }
-
     .cap-adjust-bar.show { display: flex; }
-
-    .meter-track {
-      height: 14px;
-      background: #ffffff;
-      border: 2px solid var(--black);
-      margin-top: 10px;
-      overflow: hidden;
-    }
-
+    .meter-track { height: 14px; background: #ffffff; border: 2px solid var(--black); margin-top: 10px; overflow: hidden; }
     .meter-fill { height: 100%; width: 0%; background: var(--black); transition: width 0.25s ease; }
 
-    .filter-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
+    .filter-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
     .filter-inputs { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-
     .table-box { border: var(--border); overflow-x: auto; background: #ffffff; }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
-
-    th {
-      background: var(--black);
-      color: #ffffff;
-      font-weight: 800;
-      padding: 12px 14px;
-      white-space: nowrap;
-    }
-
-    td { padding: 11px 14px; border-bottom: 2px solid var(--black); font-weight: 600; vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--bg-subtle); }
+    table.result-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+    table.result-table th { background: var(--black); color: #ffffff; font-weight: 800; padding: 12px 14px; white-space: nowrap; }
+    table.result-table td { padding: 11px 14px; border-bottom: 2px solid var(--black); font-weight: 600; vertical-align: middle; }
+    table.result-table tr:last-child td { border-bottom: none; }
+    table.result-table tr:hover td { background: var(--bg-subtle); }
 
     .tag-pill {
-      display: inline-block;
-      padding: 2px 8px;
-      font-size: 0.78rem;
-      font-weight: 800;
-      border: 2px solid var(--black);
-      background: var(--bg-subtle);
-      margin: 2px 4px 2px 0;
+      display: inline-block; padding: 2px 8px; font-size: 0.78rem; font-weight: 800;
+      border: 2px solid var(--black); background: var(--bg-subtle); margin: 2px 4px 2px 0;
     }
-
     .tag-pill.rec { background: var(--yellow); }
+    .tag-pill.special { background: var(--cyan); }
 
     @media print {
       body { background: #ffffff; padding: 0; }
-      .topbar,
-      .hero-header,
-      #upload-card,
-      #criteria-card,
-      .filter-bar,
-      .cap-adjust-bar { display: none !important; }
+      .topbar, .hero-header, #upload-card, #criteria-card, .filter-bar, .cap-adjust-bar { display: none !important; }
       .brutal-card { box-shadow: none; border: 2px solid #111111; padding: 14px; }
     }
   </style>
@@ -393,35 +200,67 @@
   <section class="hero-header anim-pop">
     <div class="hero-badge-row">
       <span class="brutal-badge">도서관법 시행령 7% 상한 대조</span>
-      <span class="brutal-badge green">KLA 학교도서관 기준</span>
-      <span class="brutal-badge sky">CSV · XLSX · 인쇄 출력</span>
+      <span class="brutal-badge green">커스텀 시트 직접 편집</span>
+      <span class="brutal-badge sky">특별 도서(폐기 X) 보호</span>
     </div>
     <h1 class="hero-title">학교도서관 장서 제적(폐기) 판별 및 사유서</h1>
     <p class="hero-desc">
-      장서·대출 통계 파일을 분석해 법정 한도 내 폐기 추천 목록과 제적 사유서를 산출합니다.
+      웹 시트에서 직접 입력하거나 파일을 업로드해 셀 단위로 수정하고, 특별 도서(폐기 제외)를 지정해 사유서를 산출합니다.
     </p>
   </section>
 
-  <!-- 1. File Upload Card -->
   <section class="brutal-card anim-pop-delay" id="upload-card">
     <div class="card-header">
-      <h2 class="card-title">1. 장서 및 대출 통계 업로드</h2>
-      <span class="brutal-badge sky">CSV · XLSX · XLS 지원</span>
+      <h2 class="card-title">1. 장서 통계 업로드 및 커스텀 시트 직접 입력·수정</h2>
+      <span class="brutal-badge sky">CSV · XLSX · 직접 편집 시트</span>
     </div>
 
     <div id="dropzone" class="dropzone" tabindex="0">
       <div class="dropzone-main">장서·대출 통계 파일을 드래그하거나 클릭하여 선택</div>
-      <div class="dropzone-sub">인식 열: 등록번호, 분류기호(KDC), 도서명, 저자, 출판사, 출판연도, 대출횟수, 상태</div>
+      <div class="dropzone-sub">인식 열: 등록번호, 분류기호(KDC), 도서명, 저자, 출판사, 출판연도, 대출횟수, 상태, 특별도서(Y/N)</div>
       <input type="file" id="file-input" accept=".csv,.xlsx,.xls" hidden />
     </div>
 
     <div class="btn-row">
       <button type="button" class="btn btn-yellow btn-shine" id="btn-load-sample">
-        샘플 데이터 불러오기 (정상 + 이상치 포함)
+        샘플 데이터 불러오기 (정상 + 이상치 + 특별도서 포함)
+      </button>
+      <button type="button" class="btn btn-green btn-shine" id="btn-add-sheet-row">
+        + 시트 행 추가
       </button>
       <button type="button" class="btn" id="btn-download-template">
         표준 CSV 양식 다운로드
       </button>
+    </div>
+
+    <div class="excel-sheet-toolbar">
+      <div style="font-size:0.86rem; font-weight:900;">
+        📊 커스텀 장서 시트 — 셀을 클릭해 바로 수정하세요. <span class="tag-pill special">★ 특별도서(폐기 X)</span> 체크 시 폐기 대상에서 제외됩니다.
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-sky btn-sm" id="btn-apply-sheet-analyze">시트 내용으로 재판별</button>
+      </div>
+    </div>
+
+    <div class="excel-sheet-wrap">
+      <table class="excel-grid" aria-label="직접 입력 및 수정 가능한 장서 시트">
+        <thead>
+          <tr>
+            <th style="width:44px;">#</th>
+            <th>등록번호</th>
+            <th>분류기호</th>
+            <th>도서명</th>
+            <th>저자</th>
+            <th>출판사</th>
+            <th>출판연도</th>
+            <th>대출횟수</th>
+            <th>상태</th>
+            <th>특별도서(폐기 X)</th>
+            <th style="width:56px;">삭제</th>
+          </tr>
+        </thead>
+        <tbody id="sheet-grid-tbody"></tbody>
+      </table>
     </div>
 
     <div id="validation-box" class="alert-box">
@@ -430,7 +269,6 @@
     </div>
   </section>
 
-  <!-- 2. Criteria Card -->
   <section class="brutal-card anim-pop-delay" id="criteria-card">
     <div class="card-header">
       <h2 class="card-title">2. 법령 및 KLA 폐기 판별 기준 설정</h2>
@@ -460,7 +298,7 @@
       <div>
         <label class="check-label">
           <input type="checkbox" id="crit-damaged" checked />
-          <span>오훼손·파손·분실 상태 도서 우선 추천</span>
+          <span>오훼손·파손·분실 상태 도서 우선 추천 (단, 특별도서 제외)</span>
         </label>
         <label class="check-label">
           <input type="checkbox" id="crit-protect-ref" checked />
@@ -469,7 +307,7 @@
       </div>
       <div>
         <label class="field-label" for="crit-total-books">학교 전체 보유 장서 수 (법정 7% 계산 모수)</label>
-        <input type="number" id="crit-total-books" placeholder="비워두면 업로드된 파일 권수를 기준으로 계산" min="1" />
+        <input type="number" id="crit-total-books" placeholder="비워두면 시트 권수를 기준으로 계산" min="1" />
       </div>
     </div>
 
@@ -480,7 +318,6 @@
     </div>
   </section>
 
-  <!-- 3. Results Card -->
   <section class="brutal-card" id="result-section" style="display: none;">
     <div class="card-header">
       <h2 class="card-title">3. 제적 추천 결과 및 사유서 출력</h2>
@@ -491,7 +328,7 @@
       <div class="kpi-box">
         <div class="kpi-label">전체 기준 장서 수</div>
         <div class="kpi-num" id="kpi-total">0권</div>
-        <div class="kpi-foot" id="kpi-valid-sub">유효 분석 데이터 0건</div>
+        <div class="kpi-foot" id="kpi-valid-sub">유효 분석 데이터 0건 · 특별도서 0권</div>
       </div>
 
       <div class="kpi-box highlight-yellow">
@@ -537,6 +374,7 @@
 
         <select id="filter-mode" style="width: auto;">
           <option value="REC">폐기 추천 도서만 보기</option>
+          <option value="SPECIAL">특별 도서(폐기 X) 보기</option>
           <option value="ALL">전체 도서 보기</option>
         </select>
 
@@ -552,7 +390,7 @@
     </div>
 
     <div class="table-box">
-      <table>
+      <table class="result-table">
         <thead>
           <tr>
             <th style="width: 44px;"><input type="checkbox" id="chk-master" checked /></th>
@@ -563,7 +401,7 @@
             <th>출판연도</th>
             <th>대출</th>
             <th>상태</th>
-            <th>판별 결과 및 제적 사유(수정 가능)</th>
+            <th>판별 결과 · 특별도서 · 사유(수정 가능)</th>
           </tr>
         </thead>
         <tbody id="weeding-tbody"></tbody>
@@ -630,37 +468,61 @@
     reader.readAsArrayBuffer(file);
   }
 
-  document.getElementById('btn-load-sample').addEventListener('click', () => {
-    const sample = [
-      { 등록번호: 'EM00101', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 0, 상태: '정상' },
-      { 등록번호: 'EM00102', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 1, 상태: '정상' },
-      { 등록번호: 'EM00103', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 0, 상태: '오훼손' },
-      { 등록번호: 'EM00104', 분류기호: '400', 도서명: '청소년 과학상식 백과 2010', 저자: '과학편집부', 출판사: '미래출판', 출판연도: 2010, 대출횟수: 0, 상태: '정상' },
-      { 등록번호: 'EM00105', 분류기호: '031', 도서명: '표준국어대사전 개정판', 저자: '국립국어원', 출판사: '두산동아', 출판연도: 2008, 대출횟수: 0, 상태: '정상' },
-      { 등록번호: 'EM00106', 분류기호: '320', 도서명: '쉽게 읽는 헌법과 시민사회', 저자: '박정훈', 출판사: '사회평론', 출판연도: 2024, 대출횟수: 15, 상태: '정상' },
-      { 등록번호: 'EM00107', 분류기호: '550', 도서명: '윈도우 XP 활용 완전정복', 저자: '김컴퓨터', 출판사: '한빛미디어', 출판연도: 2005, 대출횟수: 0, 상태: '정상' },
-      { 등록번호: 'EM00108', 분류기호: '911', 도서명: '한국사 핵심 사료집', 저자: '이역사', 출판사: '역사비평사', 출판연도: 2013, 대출횟수: 1, 상태: '파손' },
-      { 등록번호: 'EM00109', 분류기호: '843', 도서명: '앵무새 죽이기', 저자: '하퍼 리', 출판사: '열린책들', 출판연도: 2022, 대출횟수: 24, 상태: '정상' },
-      { 등록번호: 'EM00110', 분류기호: '100', 도서명: '서양 철학사 산책', 저자: '최철학', 출판사: '철학과현실사', 출판연도: 2014, 대출횟수: 0, 상태: '정상' },
-      { 등록번호: 'EM00111', 분류기호: '740', 도서명: '기초 영문법 3300제', 저자: '영어연구회', 출판사: '능률교육', 출판연도: 2012, 대출횟수: 1, 상태: '정상' },
-      { 등록번호: 'EM00112', 분류기호: '600', 도서명: '현대 미술의 이해', 저자: '정예술', 출판사: '미진사', 출판연도: 2023, 대출횟수: 9, 상태: '정상' },
-      { 등록번호: 'EM00113', 분류기호: '813.7', 도서명: '아몬드', 저자: '손원평', 출판사: '창비', 출판연도: 2020, 대출횟수: 41, 상태: '정상' },
-      { 등록번호: 'EM00114', 분류기호: '810', 도서명: '출판연도 누락 테스트 도서', 저자: '미상', 출판사: '테스트출판', 출판연도: '', 대출횟수: 0, 상태: '정상' },
-      { 등록번호: 'EM00115', 분류기호: '500', 도서명: '음수 대출횟수 보정 테스트', 저자: '오류테스트', 출판사: '테스트출판', 출판연도: 2014, 대출횟수: -4, 상태: '정상' },
-      { 등록번호: 'EM00116', 분류기호: '300', 도서명: '', 저자: '제목공백행', 출판사: '테스트출판', 출판연도: 2012, 대출횟수: 0, 상태: '정상' }
+  function getSampleData() {
+    return [
+      { 등록번호: 'EM00101', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 0, 상태: '정상', 특별도서: false },
+      { 등록번호: 'EM00102', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 1, 상태: '정상', 특별도서: false },
+      { 등록번호: 'EM00103', 분류기호: '813.6', 도서명: '소나기', 저자: '황순원', 출판사: '문학과지성사', 출판연도: 2011, 대출횟수: 0, 상태: '오훼손', 특별도서: false },
+      { 등록번호: 'EM00104', 분류기호: '400', 도서명: '청소년 과학상식 백과 2010', 저자: '과학편집부', 출판사: '미래출판', 출판연도: 2010, 대출횟수: 0, 상태: '정상', 특별도서: false },
+      { 등록번호: 'EM00105', 분류기호: '031', 도서명: '표준국어대사전 개정판', 저자: '국립국어원', 출판사: '두산동아', 출판연도: 2008, 대출횟수: 0, 상태: '정상', 특별도서: true },
+      { 등록번호: 'EM00106', 분류기호: '320', 도서명: '쉽게 읽는 헌법과 시민사회', 저자: '박정훈', 출판사: '사회평론', 출판연도: 2024, 대출횟수: 15, 상태: '정상', 특별도서: false },
+      { 등록번호: 'EM00107', 분류기호: '550', 도서명: '윈도우 XP 활용 완전정복', 저자: '김컴퓨터', 출판사: '한빛미디어', 출판연도: 2005, 대출횟수: 0, 상태: '정상', 특별도서: false },
+      { 등록번호: 'EM00108', 분류기호: '911', 도서명: '학교 개교 50주년 향토사료집', 저자: '지역사연구회', 출판사: '학교도서관', 출판연도: 1998, 대출횟수: 0, 상태: '오훼손', 특별도서: true }
     ];
-    processRawRows(sample, 'sample_books.csv');
+  }
+
+  document.getElementById('btn-load-sample').addEventListener('click', () => {
+    processRawRows(getSampleData(), 'sample_books.csv');
+  });
+
+  document.getElementById('btn-add-sheet-row').addEventListener('click', () => {
+    const nextNum = rawBooks.length + 1;
+    rawBooks.push({
+      id: `EM${String(nextNum).padStart(5, '0')}`,
+      kdc: '813.6',
+      kdcMain: '8',
+      title: '',
+      author: '',
+      publisher: '',
+      pubYear: 2020,
+      loans: 0,
+      status: '정상',
+      isSpecial: false,
+      recommended: false,
+      checked: false,
+      reasons: [],
+      customNote: ''
+    });
+    renderSheetGrid();
+    analyzeBooks();
+  });
+
+  document.getElementById('btn-apply-sheet-analyze').addEventListener('click', () => {
+    analyzeBooks();
   });
 
   document.getElementById('btn-download-template').addEventListener('click', () => {
-    const csv = '﻿등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태
-' +
-      'EM00001,813.6,메밀꽃 필 무렵,이효석,문학과지성사,2012,0,정상
-' +
-      'EM00002,400,최신 과학 트렌드 2011,김과학,과학출판사,2011,1,오훼손
-';
+    const csv = '\uFEFF등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태,특별도서\n' +
+      'EM00001,813.6,메밀꽃 필 무렵,이효석,문학과지성사,2012,0,정상,N\n' +
+      'EM00002,911,학교사료집,교사연구회,학교출판,1999,0,오훼손,Y\n';
     triggerDownload(csv, '학교도서관_장서분석_표준양식.csv', 'text/csv;charset=utf-8;');
   });
+
+  function parseSpecialFlag(val) {
+    if (typeof val === 'boolean') return val;
+    const s = String(val || '').trim().toLowerCase();
+    return ['y', 'yes', 'true', '1', '특별', '특별도서', 'o', '예'].includes(s);
+  }
 
   function processRawRows(rows, filename) {
     const warnings = [];
@@ -670,29 +532,35 @@
       const rowIdx = i + 2;
       const id = String(r['등록번호'] || r['ID'] || `ROW-${rowIdx}`).trim();
       const title = String(r['도서명'] || r['서명'] || r['제목'] || '').trim();
-      const author = String(r['저자'] || r['지은이'] || '저자미상').trim();
-      const publisher = String(r['출판사'] || r['발행처'] || '출판사미상').trim();
-      const kdc = String(r['분류기호'] || r['KDC'] || r['청구기호'] || '000').trim();
+      const author = String(r['저자'] || r['지은이'] || '').trim();
+      const publisher = String(r['출판사'] || r['발행처'] || '').trim();
+      const kdc = String(r['분류기호'] || r['KDC'] || r['청구기호'] || '800').trim();
       const status = String(r['상태'] || r['도서상태'] || '정상').trim();
+      const isSpecial = parseSpecialFlag(r['특별도서'] ?? r['특별'] ?? r['보존구분'] ?? false);
 
       if (!title) {
-        warnings.push(`${rowIdx}행 (${id}): 도서명이 누락되어 분석에서 제외했습니다.`);
-        return;
+        warnings.push(`${rowIdx}행 (${id}): 도서명이 비어 있어 시트에서 직접 입력하거나 판별에서 제외됩니다.`);
       }
 
-      let pubYear = parseInt(String(r['출판연도'] || r['발행년'] || '').replace(/[^0-9]/g, ''), 10);
-      if (isNaN(pubYear) || pubYear < 1900 || pubYear > 2030) {
-        warnings.push(`${rowIdx}행 「${title}」: 출판연도("${r['출판연도'] || ''}") 이상으로 노후도 판별을 보류했습니다.`);
-        pubYear = null;
+      let pubYear = null;
+      const rawYearStr = String(r['출판연도'] || r['발행년'] || '').trim();
+      if (rawYearStr !== '') {
+        const parsedY = parseInt(rawYearStr.replace(/[^0-9]/g, ''), 10);
+        if (isNaN(parsedY) || parsedY < 1900 || parsedY > 2030) {
+          warnings.push(`${rowIdx}행 「${title || id}」: 출판연도("${rawYearStr}") 이상으로 노후도 판별을 보류했습니다.`);
+        } else {
+          pubYear = parsedY;
+        }
       }
 
       let loans = Number(r['대출횟수'] ?? r['대출수'] ?? 0);
       if (isNaN(loans) || loans < 0) {
-        warnings.push(`${rowIdx}행 「${title}」: 음수/오류 대출횟수("${r['대출횟수']}")를 0회로 보정했습니다.`);
+        warnings.push(`${rowIdx}행 「${title || id}」: 음수/오류 대출횟수("${r['대출횟수']}")를 0회로 보정했습니다.`);
         loans = 0;
       }
 
       valid.push({
+        _uid: `book_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`,
         id,
         kdc,
         kdcMain: kdc.charAt(0) || '0',
@@ -702,6 +570,7 @@
         pubYear,
         loans,
         status,
+        isSpecial,
         recommended: false,
         checked: false,
         reasons: [],
@@ -710,10 +579,84 @@
     });
 
     rawBooks = valid;
-    const headTitle = `[${filename}] 총 ${rows.length}행 중 유효 ${valid.length}건 로드` +
-      (warnings.length ? ` (예외 데이터 ${warnings.length}건 자동 처리)` : ' (이상 없음)');
+    const headTitle = `[${filename}] 총 ${rows.length}행 로드` +
+      (warnings.length ? ` (확인 필요 ${warnings.length}건)` : ' (이상 없음)');
     showValidation(warnings, warnings.length > 0, headTitle);
+    renderSheetGrid();
     analyzeBooks();
+  }
+
+  function renderSheetGrid() {
+    const tbody = document.getElementById('sheet-grid-tbody');
+    tbody.innerHTML = '';
+
+    rawBooks.forEach((b, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="row-num-cell">${idx + 1}</td>
+        <td><input type="text" class="excel-cell-input" data-field="id" data-uid="${b._uid}" value="${esc(b.id)}" /></td>
+        <td><input type="text" class="excel-cell-input" data-field="kdc" data-uid="${b._uid}" value="${esc(b.kdc)}" /></td>
+        <td><input type="text" class="excel-cell-input" data-field="title" data-uid="${b._uid}" value="${esc(b.title)}" placeholder="도서명 입력" /></td>
+        <td><input type="text" class="excel-cell-input" data-field="author" data-uid="${b._uid}" value="${esc(b.author)}" placeholder="저자" /></td>
+        <td><input type="text" class="excel-cell-input" data-field="publisher" data-uid="${b._uid}" value="${esc(b.publisher)}" placeholder="출판사" /></td>
+        <td><input type="number" class="excel-cell-input" data-field="pubYear" data-uid="${b._uid}" value="${b.pubYear ?? ''}" placeholder="연도" /></td>
+        <td><input type="number" class="excel-cell-input" data-field="loans" data-uid="${b._uid}" value="${b.loans}" min="0" /></td>
+        <td><input type="text" class="excel-cell-input" data-field="status" data-uid="${b._uid}" value="${esc(b.status)}" /></td>
+        <td style="text-align:center; padding: 4px 6px;">
+          <button type="button" class="special-chip-btn ${b.isSpecial ? 'is-special' : ''}" data-special-uid="${b._uid}">
+            ${b.isSpecial ? '★ 폐기 X (특별)' : '☆ 일반'}
+          </button>
+        </td>
+        <td style="text-align:center; padding: 4px 6px;">
+          <button type="button" class="btn btn-pink btn-sm" data-del-uid="${b._uid}">×</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.excel-cell-input').forEach(inp => {
+      inp.addEventListener('change', e => {
+        const uid = e.target.dataset.uid;
+        const field = e.target.dataset.field;
+        const book = rawBooks.find(item => item._uid === uid);
+        if (!book) return;
+
+        if (field === 'pubYear') {
+          const val = parseInt(e.target.value, 10);
+          book.pubYear = isNaN(val) ? null : val;
+        } else if (field === 'loans') {
+          const val = Number(e.target.value);
+          book.loans = isNaN(val) || val < 0 ? 0 : val;
+          e.target.value = book.loans;
+        } else {
+          book[field] = e.target.value;
+          if (field === 'kdc') {
+            book.kdcMain = String(e.target.value || '0').trim().charAt(0) || '0';
+          }
+        }
+        analyzeBooks();
+      });
+    });
+
+    tbody.querySelectorAll('.special-chip-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const uid = e.currentTarget.dataset.specialUid;
+        const book = rawBooks.find(item => item._uid === uid);
+        if (!book) return;
+        book.isSpecial = !book.isSpecial;
+        renderSheetGrid();
+        analyzeBooks();
+      });
+    });
+
+    tbody.querySelectorAll('button[data-del-uid]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const uid = e.currentTarget.dataset.delUid;
+        rawBooks = rawBooks.filter(item => item._uid !== uid);
+        renderSheetGrid();
+        analyzeBooks();
+      });
+    });
   }
 
   function showValidation(list, isWarn, title) {
@@ -734,14 +677,14 @@
 
   document.getElementById('btn-reanalyze').addEventListener('click', () => {
     if (!rawBooks.length) {
-      alert('먼저 장서 데이터를 업로드하거나 샘플 데이터를 불러오십시오.');
+      alert('먼저 장서 데이터를 입력하거나 샘플 데이터를 불러오십시오.');
       return;
     }
     analyzeBooks();
   });
 
   function normKey(b) {
-    return `${b.title.replace(/\s+/g, '').toLowerCase()}__${b.author.replace(/\s+/g, '').toLowerCase()}`;
+    return `${String(b.title || '').replace(/\s+/g, '').toLowerCase()}__${String(b.author || '').replace(/\s+/g, '').toLowerCase()}`;
   }
 
   function analyzeBooks() {
@@ -752,23 +695,55 @@
     const includeDamaged = document.getElementById('crit-damaged').checked;
     const protectRef = document.getElementById('crit-protect-ref').checked;
 
+    const validRows = rawBooks.filter(b => String(b.title || '').trim() !== '');
+
     const copyMap = {};
-    rawBooks.forEach(b => {
+    validRows.forEach(b => {
       const k = normKey(b);
       copyMap[k] = (copyMap[k] || 0) + 1;
     });
 
-    analyzedBooks = rawBooks.map(b => {
+    const prevNotes = new Map(analyzedBooks.map(item => [item._uid, item.customNote]));
+
+    analyzedBooks = validRows.map(b => {
+      const kdcMain = String(b.kdc || '0').trim().charAt(0) || '0';
+      const authorClean = String(b.author || '').trim() || '저자미상';
+      const pubClean = String(b.publisher || '').trim() || '출판사미상';
+      const statusClean = String(b.status || '정상').trim();
       const reasons = [];
-      const isRef = b.kdcMain === '0';
-      const isDamaged = /오훼손|훼손|파손|분실|오손/.test(b.status);
+      const isRef = kdcMain === '0';
+      const isDamaged = /오훼손|훼손|파손|분실|오손/.test(statusClean);
+
+      if (b.isSpecial) {
+        return {
+          ...b,
+          kdcMain,
+          author: authorClean,
+          publisher: pubClean,
+          status: statusClean,
+          recommended: false,
+          checked: false,
+          reasons: ['특별도서 지정 (폐기 X)'],
+          customNote: prevNotes.get(b._uid) || ''
+        };
+      }
 
       if (protectRef && isRef && !isDamaged) {
-        return { ...b, recommended: false, checked: false, reasons: ['보호 제외 (KDC 000 참고도서)'], customNote: '' };
+        return {
+          ...b,
+          kdcMain,
+          author: authorClean,
+          publisher: pubClean,
+          status: statusClean,
+          recommended: false,
+          checked: false,
+          reasons: ['보호 제외 (KDC 000 참고도서)'],
+          customNote: prevNotes.get(b._uid) || ''
+        };
       }
 
       if (includeDamaged && isDamaged) {
-        reasons.push(`물리적 훼손 (${b.status})`);
+        reasons.push(`물리적 훼손 (${statusClean})`);
       }
 
       const age = b.pubYear ? baseYear - b.pubYear : 0;
@@ -789,10 +764,14 @@
       const rec = reasons.length > 0;
       return {
         ...b,
+        kdcMain,
+        author: authorClean,
+        publisher: pubClean,
+        status: statusClean,
         recommended: rec,
         checked: rec,
         reasons: rec ? reasons : ['보존 유지'],
-        customNote: ''
+        customNote: prevNotes.get(b._uid) || ''
       };
     });
 
@@ -809,6 +788,7 @@
 
   function refreshKpis() {
     const totalBase = getTotalBaseCount();
+    const specialCount = analyzedBooks.filter(b => b.isSpecial).length;
     const recCount = analyzedBooks.filter(b => b.recommended).length;
     const selCount = analyzedBooks.filter(b => b.checked).length;
 
@@ -817,7 +797,7 @@
     const maxAllowed = Math.floor(totalBase * 0.07);
 
     document.getElementById('kpi-total').textContent = `${totalBase.toLocaleString()}권`;
-    document.getElementById('kpi-valid-sub').textContent = `파일 유효 장서 ${analyzedBooks.length.toLocaleString()}건`;
+    document.getElementById('kpi-valid-sub').textContent = `유효 ${analyzedBooks.length.toLocaleString()}건 · 특별도서 ${specialCount}권`;
 
     document.getElementById('kpi-rec').textContent = `${recCount.toLocaleString()}권`;
     document.getElementById('kpi-sel-sub').textContent = `사유서 출력 선택: ${selCount.toLocaleString()}권`;
@@ -854,15 +834,15 @@
       return (a.pubYear || 9999) - (b.pubYear || 9999);
     });
 
-    const allowedIds = new Set();
+    const allowedUids = new Set();
     for (const item of priorityOrder) {
-      if (item.checked && kept < maxAllowed) {
-        allowedIds.add(item.id);
+      if (item.checked && !item.isSpecial && kept < maxAllowed) {
+        allowedUids.add(item._uid);
         kept++;
       }
     }
 
-    analyzedBooks.forEach(b => { b.checked = allowedIds.has(b.id); });
+    analyzedBooks.forEach(b => { b.checked = allowedUids.has(b._uid); });
     renderTable();
     refreshKpis();
   });
@@ -877,6 +857,7 @@
 
     const list = analyzedBooks.filter(b => {
       if (mode === 'REC' && !b.recommended) return false;
+      if (mode === 'SPECIAL' && !b.isSpecial) return false;
       if (kdc !== 'ALL' && b.kdcMain !== kdc) return false;
       if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q)) return false;
       return true;
@@ -889,9 +870,13 @@
 
     list.forEach(b => {
       const tr = document.createElement('tr');
-      const pills = b.reasons.map(r => `<span class="tag-pill ${b.recommended ? 'rec' : ''}">${esc(r)}</span>`).join('');
+      const pills = b.reasons.map(r => {
+        const cls = b.isSpecial ? 'special' : (b.recommended ? 'rec' : '');
+        return `<span class="tag-pill ${cls}">${esc(r)}</span>`;
+      }).join('');
+
       tr.innerHTML = `
-        <td><input type="checkbox" class="row-chk" data-id="${esc(b.id)}" ${b.checked ? 'checked' : ''} /></td>
+        <td><input type="checkbox" class="row-chk" data-uid="${b._uid}" ${b.checked ? 'checked' : ''} /></td>
         <td>${esc(b.id)}</td>
         <td>${esc(b.kdc)}</td>
         <td><strong>${esc(b.title)}</strong></td>
@@ -900,8 +885,13 @@
         <td>${b.loans}회</td>
         <td>${esc(b.status)}</td>
         <td>
-          <div>${pills}</div>
-          <input type="text" class="inline-reason-input" data-note-id="${esc(b.id)}" value="${esc(b.customNote)}" placeholder="사유서 보충 메모(선택)..." />
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+            <div>${pills}</div>
+            <button type="button" class="special-chip-btn ${b.isSpecial ? 'is-special' : ''}" data-res-special-uid="${b._uid}">
+              ${b.isSpecial ? '★ 특별도서(폐기 X)' : '☆ 특별도서 지정'}
+            </button>
+          </div>
+          <input type="text" class="inline-reason-input" data-note-uid="${b._uid}" value="${esc(b.customNote)}" placeholder="사유서 보충 메모(선택)..." />
         </td>
       `;
       tbody.appendChild(tr);
@@ -909,7 +899,7 @@
 
     tbody.querySelectorAll('.row-chk').forEach(chk => {
       chk.addEventListener('change', e => {
-        const target = analyzedBooks.find(item => item.id === e.target.dataset.id);
+        const target = analyzedBooks.find(item => item._uid === e.target.dataset.uid);
         if (target) {
           target.checked = e.target.checked;
           refreshKpis();
@@ -917,9 +907,19 @@
       });
     });
 
+    tbody.querySelectorAll('button[data-res-special-uid]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const uid = e.currentTarget.dataset.resSpecialUid;
+        const rawItem = rawBooks.find(item => item._uid === uid);
+        if (rawItem) rawItem.isSpecial = !rawItem.isSpecial;
+        renderSheetGrid();
+        analyzeBooks();
+      });
+    });
+
     tbody.querySelectorAll('.inline-reason-input').forEach(inp => {
       inp.addEventListener('input', e => {
-        const target = analyzedBooks.find(item => item.id === e.target.dataset.noteId);
+        const target = analyzedBooks.find(item => item._uid === e.target.dataset.noteUid);
         if (target) target.customNote = e.target.value;
       });
     });
@@ -933,7 +933,7 @@
     const val = e.target.checked;
     document.querySelectorAll('.row-chk').forEach(chk => {
       chk.checked = val;
-      const item = analyzedBooks.find(b => b.id === chk.dataset.id);
+      const item = analyzedBooks.find(b => b._uid === chk.dataset.uid);
       if (item) item.checked = val;
     });
     refreshKpis();
@@ -972,8 +972,7 @@
     const rows = buildWeedingReportRows(selected);
     const headers = Object.keys(rows[0]);
     const csvLines = rows.map(r => headers.map(h => `"${String(r[h]).replace(/"/g, '""')}"`).join(','));
-    const csv = '﻿' + [headers.join(','), ...csvLines].join('
-');
+    const csv = '\uFEFF' + [headers.join(','), ...csvLines].join('\n');
     const dateStr = new Date().toISOString().slice(0, 10);
     triggerDownload(csv, `학교도서관_장서제적_사유서_${dateStr}.csv`, 'text/csv;charset=utf-8;');
   });
@@ -1024,6 +1023,8 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+
+  processRawRows(getSampleData().slice(0, 5), '직접입력_시트');
 </script>
 
 </body>
