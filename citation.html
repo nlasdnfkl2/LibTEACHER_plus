@@ -110,6 +110,16 @@
     .brutal-badge.sky { background: var(--cyan); }
     .brutal-badge.green { background: var(--green); }
 
+    .source-tag {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      border: 1.5px solid var(--black);
+      background: #f3f4f6;
+      color: var(--black);
+    }
+
     .hero-title {
       font-size: clamp(1.5rem, 3vw, 2.1rem);
       font-weight: 900;
@@ -224,6 +234,36 @@
       padding: 12px 14px;
     }
 
+    .candidate-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .ext-search-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .ext-link-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      border: 1.5px solid var(--black);
+      background: #ffffff;
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    .ext-link-chip:hover {
+      background: var(--yellow);
+    }
+
     .candidate-item {
       display: flex;
       justify-content: space-between;
@@ -306,27 +346,27 @@
 
   <section class="hero-header anim-pop">
     <div class="hero-badge-row">
-      <span class="brutal-badge sky">Google Books · Crossref DOI 연동</span>
+      <span class="brutal-badge sky">교보문고 · 알라딘 · Google · Apple · Crossref 통합 조회</span>
       <span class="brutal-badge green">한국문헌정보학회지 · APA · MLA</span>
       <span class="brutal-badge">목록 자동 저장</span>
     </div>
     <h1 class="hero-title">수업·탐구용 자동 출처 생성기</h1>
     <p class="hero-desc">
-      단행본, 학술논문, 웹자료의 서지 정보를 조회하거나 입력해 수업 배포용 참고문헌과 본문 내 인용을 생성합니다.
+      단행본, 학술논문, 웹자료의 서지 정보를 다중 서점·학술 DB에서 중복 없이 통합 조회해 수업 배포용 참고문헌과 본문 내 인용을 생성합니다.
     </p>
   </section>
 
   <section class="brutal-card anim-pop-delay">
     <div class="card-header">
       <h2 class="card-title">1. 자료 유형 선택 및 서지 정보 자동 조회</h2>
-      <span class="brutal-badge sky">다중 후보 선택 지원</span>
+      <span class="brutal-badge sky">다중 사이트 중복 제거 지원</span>
     </div>
 
     <div class="grid-2" style="margin-bottom: 16px;">
       <div>
         <label class="field-label" for="cite-type">자료 유형</label>
         <select id="cite-type">
-          <option value="book">단행본 (도서명 또는 ISBN)</option>
+          <option value="book">단행본 (도서명, 저자 또는 ISBN)</option>
           <option value="journal">학술논문 (DOI 번호 또는 논문 제목)</option>
           <option value="web">웹페이지 / 온라인 기사 (URL)</option>
         </select>
@@ -341,10 +381,10 @@
       </div>
     </div>
 
-    <label class="field-label" for="cite-query" id="cite-query-label">도서명 또는 ISBN 입력</label>
+    <label class="field-label" for="cite-query" id="cite-query-label">도서명, 저자 또는 ISBN 입력</label>
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
       <input type="text" id="cite-query" placeholder="예: 학교도서관 운영 또는 9788976781857" style="flex: 1; min-width: 240px;" />
-      <button type="button" class="btn btn-yellow btn-shine" id="btn-search-meta">메타데이터 자동 조회</button>
+      <button type="button" class="btn btn-yellow btn-shine" id="btn-search-meta">메타데이터 통합 조회</button>
     </div>
 
     <div id="cite-notice" class="cite-notice"></div>
@@ -488,7 +528,6 @@
     updateCitationPreview();
   });
 
-  // 검색창 및 도서명/저자 입력창 모두 Enter 키로 메타데이터 검색 가능
   document.getElementById('btn-search-meta').addEventListener('click', () => searchMetadata());
   citeQuery.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
@@ -525,6 +564,96 @@
     return String(str || '')
       .toLowerCase()
       .replace(/[^0-9a-z가-힣]/g, '');
+  }
+
+  // 저자명에서 '지음', '옮김', '(지은이)' 등 서점 표기 접미어 정리
+  function cleanAuthorName(rawAuthor) {
+    if (!rawAuthor) return '';
+    return String(rawAuthor)
+      .split(/[,;/|]/)
+      .map(part =>
+        part
+          .replace(/\((지은이|엮은이|옮긴이|그림|글|감수|저|역)\)/g, '')
+          .replace(/\s*(지음|엮음|옮김|그림|감수|공저|공역|편저|저|역)\s*$/g, '')
+          .trim()
+      )
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  // 중복 판별용 핵심 도서명 키 (부제·괄호·공백 제거)
+  function getBookDedupeKey(rec) {
+    const baseTitle = String(rec.title || '')
+      .split(/[:(\[－—]/)[0]
+      .trim();
+    const titleKey = compactText(baseTitle || rec.title);
+    const cleanedAuthor = cleanAuthorName(rec.author);
+    const firstAuthor = compactText(cleanedAuthor.split(',')[0] || '');
+    return { titleKey, firstAuthor };
+  }
+
+  function hasKorean(str) {
+    return /[가-힣]/.test(String(str || ''));
+  }
+
+  // 다중 서점·DB 결과 중복 제거 및 누락 필드 병합
+  function deduplicateBooks(rawList) {
+    const merged = [];
+
+    rawList.forEach(raw => {
+      if (!raw || !raw.title) return;
+      const item = {
+        ...raw,
+        title: String(raw.title).replace(/\s+/g, ' ').trim(),
+        author: cleanAuthorName(raw.author),
+        year: String(raw.year || '').replace(/[^0-9]/g, '').slice(0, 4),
+        publisher: String(raw.publisher || '').replace(/\s+/g, ' ').trim(),
+        detail: String(raw.detail || '').trim(),
+        url: String(raw.url || '').trim(),
+        sources: Array.isArray(raw.sources) ? [...raw.sources] : (raw.source ? [raw.source] : [])
+      };
+
+      const { titleKey, firstAuthor } = getBookDedupeKey(item);
+      if (!titleKey) return;
+
+      const existing = merged.find(m => {
+        const mKey = getBookDedupeKey(m);
+        if (mKey.titleKey !== titleKey) return false;
+        // 저자가 둘 다 있으면 첫 저자 일치 여부 확인, 한쪽이라도 저자 미상이면 동일 도서로 병합
+        if (mKey.firstAuthor && firstAuthor) {
+          return mKey.firstAuthor === firstAuthor ||
+                 mKey.firstAuthor.includes(firstAuthor) ||
+                 firstAuthor.includes(mKey.firstAuthor);
+        }
+        return true;
+      });
+
+      if (!existing) {
+        merged.push(item);
+      } else {
+        // 출처 병합
+        item.sources.forEach(src => {
+          if (src && !existing.sources.includes(src)) existing.sources.push(src);
+        });
+        // 빈 서지 항목 보완 및 한글 표기 우선 적용
+        if (!existing.author && item.author) existing.author = item.author;
+        else if (item.author && hasKorean(item.author) && !hasKorean(existing.author)) existing.author = item.author;
+
+        if (!existing.year && item.year) existing.year = item.year;
+
+        if (!existing.publisher && item.publisher) existing.publisher = item.publisher;
+        else if (item.publisher && hasKorean(item.publisher) && !hasKorean(existing.publisher)) existing.publisher = item.publisher;
+
+        if (!existing.detail && item.detail) existing.detail = item.detail;
+        if (!existing.url && item.url) existing.url = item.url;
+        // 국내 서점 상세 링크가 있으면 우선 반영
+        if (item.url && /kyobobook\.co\.kr|aladin\.co\.kr/.test(item.url)) {
+          existing.url = item.url;
+        }
+      }
+    });
+
+    return merged;
   }
 
   function getBigrams(str) {
@@ -595,24 +724,49 @@
     updateCitationPreview();
   }
 
-  function renderCandidates(rankedList) {
+  function renderExternalSearchLinks(queryStr) {
+    if (!queryStr) return '';
+    const enc = encodeURIComponent(queryStr);
+    return `
+      <div class="ext-search-links" aria-label="외부 서지 직접 확인">
+        <a class="ext-link-chip" href="https://search.kyobobook.co.kr/web/search?vPstrKeyWord=${enc}" target="_blank" rel="noopener noreferrer">교보문고 ↗</a>
+        <a class="ext-link-chip" href="https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord=${enc}" target="_blank" rel="noopener noreferrer">알라딘 ↗</a>
+        <a class="ext-link-chip" href="https://www.nl.go.kr/NL/contents/search.do?srchTarget=total&pageNum=1&pageSize=10&kwd=${enc}" target="_blank" rel="noopener noreferrer">국립중앙도서관 ↗</a>
+        <a class="ext-link-chip" href="https://www.yes24.com/Product/Search?domain=BOOK&query=${enc}" target="_blank" rel="noopener noreferrer">YES24 ↗</a>
+      </div>
+    `;
+  }
+
+  function renderCandidates(rankedList, queryStr = '') {
     if (!rankedList.length) {
       candidateBox.style.display = 'none';
       candidateBox.innerHTML = '';
       return;
     }
     candidateBox.style.display = 'block';
-    candidateBox.innerHTML = `<div style="font-size:0.84rem; font-weight:900;">유사도 순위 검색 결과 ${rankedList.length}건 — 원하는 자료를 클릭해 입력란에 반영하세요:</div>`;
+    const extLinksHtml = citeType.value === 'book' ? renderExternalSearchLinks(queryStr) : '';
+
+    candidateBox.innerHTML = `
+      <div class="candidate-head">
+        <div style="font-size:0.84rem; font-weight:900;">중복 제거 통합 검색 결과 ${rankedList.length}건 — 클릭 시 입력란에 반영됩니다:</div>
+        ${extLinksHtml}
+      </div>
+    `;
 
     rankedList.forEach((entry, idx) => {
       const rec = entry.item;
       const score = entry.score;
+      const sourcesHtml = (rec.sources || [])
+        .map(s => `<span class="source-tag">${esc(s)}</span>`)
+        .join(' ');
+
       const row = document.createElement('div');
       row.className = 'candidate-item';
       row.innerHTML = `
         <div style="flex:1; min-width:0;">
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <span class="brutal-badge ${idx === 0 ? 'green' : ''}" style="padding:2px 7px; font-size:0.74rem;">#${idx + 1} · 유사도 ${score}%</span>
+            ${sourcesHtml}
             <span>${esc(rec.title || '제목 미상')}</span>
             <span style="color:var(--ink-muted);">(${esc(rec.year || '연도 미상')})</span>
           </div>
@@ -630,78 +784,195 @@
     });
   }
 
-  async function fetchBookCandidates(queryStr) {
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 4500) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function fetchViaCorsProxy(targetUrl) {
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+    const res = await fetchWithTimeout(proxyUrl, {}, 4800);
+    if (!res.ok) throw new Error('Proxy failed');
+    const data = await res.json();
+    return data.contents || '';
+  }
+
+  // 1) 교보문고 검색 파싱
+  async function fetchKyoboBooks(queryStr) {
+    const target = `https://search.kyobobook.co.kr/web/search?vPstrKeyWord=${encodeURIComponent(queryStr)}`;
+    const html = await fetchViaCorsProxy(target);
+    if (!html) return [];
+
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const items = [];
+    doc.querySelectorAll('.prod_item').forEach(el => {
+      const titleEl = el.querySelector('.prod_name, [id^="cmdtName_"]');
+      const authorEl = el.querySelector('.prod_author');
+      const pubEl = el.querySelector('.prod_publish a, .prod_publish');
+      const dateEl = el.querySelector('.prod_publish .date, .date');
+      const linkEl = el.querySelector('a.prod_info, a.prod_link');
+
+      const title = titleEl ? titleEl.textContent.trim() : '';
+      if (!title) return;
+
+      const rawPub = pubEl ? pubEl.textContent.replace(/\s+/g, ' ').trim() : '';
+      const rawDate = dateEl ? dateEl.textContent.trim() : rawPub;
+      const yearMatch = rawDate.match(/(19|20)\d{2}/);
+      const publisher = rawPub
+        .replace(rawDate, '')
+        .replace(/[·|]/g, '')
+        .trim();
+
+      let href = linkEl ? linkEl.getAttribute('href') : '';
+      if (href && href.startsWith('/')) href = `https://product.kyobobook.co.kr${href}`;
+
+      items.push({
+        source: '교보문고',
+        author: authorEl ? authorEl.textContent.replace(/\s+/g, ' ').trim() : '',
+        year: yearMatch ? yearMatch[0] : '',
+        title,
+        publisher,
+        detail: '',
+        url: href || ''
+      });
+    });
+    return items.slice(0, 8);
+  }
+
+  // 2) 알라딘 검색 파싱
+  async function fetchAladinBooks(queryStr) {
+    const target = `https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord=${encodeURIComponent(queryStr)}`;
+    const html = await fetchViaCorsProxy(target);
+    if (!html) return [];
+
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const items = [];
+    doc.querySelectorAll('.ss_book_box').forEach(box => {
+      const titleLink = box.querySelector('a.bo3');
+      const title = titleLink ? titleLink.textContent.trim() : '';
+      if (!title) return;
+
+      let author = '';
+      let publisher = '';
+      let year = '';
+
+      const listLis = Array.from(box.querySelectorAll('.ss_book_list ul li'));
+      const metaLi = listLis.find(li => li.textContent.includes('|') && /(지은이|엮은이|옮긴이|년|월)/.test(li.textContent));
+      if (metaLi) {
+        const parts = metaLi.textContent.split('|').map(s => s.trim());
+        if (parts.length >= 1) author = parts[0];
+        if (parts.length >= 2) publisher = parts[1];
+        const ym = metaLi.textContent.match(/(19|20)\d{2}/);
+        if (ym) year = ym[0];
+      }
+
+      let href = titleLink.getAttribute('href') || '';
+      if (href && href.startsWith('/')) href = `https://www.aladin.co.kr${href}`;
+
+      items.push({
+        source: '알라딘',
+        author,
+        year,
+        title,
+        publisher,
+        detail: '',
+        url: href
+      });
+    });
+    return items.slice(0, 8);
+  }
+
+  // 3) Google Books API (ISBN + 한국어 우선 + 일반)
+  async function fetchGoogleBooks(queryStr) {
     const isbn = queryStr.replace(/[^0-9Xx]/g, '');
     const results = [];
-    const seen = new Set();
-
-    function pushUnique(rec) {
-      const key = `${compactText(rec.title)}__${compactText(rec.author)}__${rec.year || ''}`;
-      if (!rec.title || seen.has(key)) return;
-      seen.add(key);
-      results.push(rec);
-    }
+    const urls = [];
 
     if (isbn.length === 10 || isbn.length === 13) {
-      try {
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=8`);
-        const json = await res.json();
-        (json.items || []).forEach(it => {
-          const info = it.volumeInfo || {};
-          pushUnique({
-            author: (info.authors || []).join(', '),
-            year: (info.publishedDate || '').slice(0, 4),
-            title: info.title || '',
-            publisher: info.publisher || '',
-            detail: '',
-            url: info.infoLink || ''
-          });
-        });
-      } catch {}
+      urls.push(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=6`);
     }
+    urls.push(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(queryStr)}&langRestrict=ko&maxResults=10&printType=books`);
+    urls.push(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(queryStr)}&maxResults=8&printType=books`);
 
-    const queries = Array.from(new Set([
-      queryStr,
-      `"${queryStr}"`,
-      compactText(queryStr) !== queryStr.toLowerCase() ? compactText(queryStr) : ''
-    ].filter(Boolean))).slice(0, 2);
-
-    await Promise.all(queries.map(async qTerm => {
-      try {
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(qTerm)}&maxResults=10&printType=books`);
-        const json = await res.json();
-        (json.items || []).forEach(it => {
-          const info = it.volumeInfo || {};
-          pushUnique({
-            author: (info.authors || []).join(', '),
-            year: (info.publishedDate || '').slice(0, 4),
-            title: info.title || '',
-            publisher: info.publisher || '',
-            detail: '',
-            url: info.infoLink || ''
-          });
+    await Promise.allSettled(urls.map(async u => {
+      const res = await fetchWithTimeout(u, {}, 4200);
+      if (!res.ok) return;
+      const json = await res.json();
+      (json.items || []).forEach(it => {
+        const info = it.volumeInfo || {};
+        if (!info.title) return;
+        results.push({
+          source: 'Google Books',
+          author: (info.authors || []).join(', '),
+          year: (info.publishedDate || '').slice(0, 4),
+          title: info.title || '',
+          publisher: info.publisher || '',
+          detail: '',
+          url: info.infoLink || ''
         });
-      } catch {}
+      });
     }));
 
-    if (results.length < 3) {
-      try {
-        const olRes = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(queryStr)}&limit=8`);
-        const olJson = await olRes.json();
-        (olJson.docs || []).forEach(doc => {
-          pushUnique({
-            author: (doc.author_name || []).join(', '),
-            year: doc.first_publish_year ? String(doc.first_publish_year) : '',
-            title: doc.title || '',
-            publisher: Array.isArray(doc.publisher) ? doc.publisher[0] : (doc.publisher || ''),
-            detail: '',
-            url: doc.key ? `https://openlibrary.org${doc.key}` : ''
-          });
-        });
-      } catch {}
-    }
-
     return results;
+  }
+
+  // 4) Apple Books 한국 스토어 API (CORS 기본 지원, 국내 단행본 풍부)
+  async function fetchAppleBooksKR(queryStr) {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(queryStr)}&media=ebook&country=kr&limit=10`;
+    const res = await fetchWithTimeout(url, {}, 4000);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.results || []).map(it => ({
+      source: 'Apple Books',
+      author: it.artistName || '',
+      year: (it.releaseDate || '').slice(0, 4),
+      title: it.trackName || '',
+      publisher: '',
+      detail: '',
+      url: it.trackViewUrl || ''
+    })).filter(r => r.title);
+  }
+
+  // 5) Open Library API (해외 단행본 보완)
+  async function fetchOpenLibraryBooks(queryStr) {
+    const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(queryStr)}&limit=6`;
+    const res = await fetchWithTimeout(url, {}, 4000);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.docs || []).map(doc => ({
+      source: 'Open Library',
+      author: (doc.author_name || []).join(', '),
+      year: doc.first_publish_year ? String(doc.first_publish_year) : '',
+      title: doc.title || '',
+      publisher: Array.isArray(doc.publisher) ? doc.publisher[0] : (doc.publisher || ''),
+      detail: '',
+      url: doc.key ? `https://openlibrary.org${doc.key}` : ''
+    })).filter(r => r.title);
+  }
+
+  // 다중 소스 통합 단행본 검색 + 중복 제거
+  async function fetchBookCandidates(queryStr) {
+    const settled = await Promise.allSettled([
+      fetchKyoboBooks(queryStr),
+      fetchAladinBooks(queryStr),
+      fetchGoogleBooks(queryStr),
+      fetchAppleBooksKR(queryStr),
+      fetchOpenLibraryBooks(queryStr)
+    ]);
+
+    const combined = [];
+    settled.forEach(res => {
+      if (res.status === 'fulfilled' && Array.isArray(res.value)) {
+        combined.push(...res.value);
+      }
+    });
+
+    return deduplicateBooks(combined);
   }
 
   async function searchMetadata(overrideQuery) {
@@ -715,26 +986,33 @@
       return;
     }
 
-    notifyCite(`「${q}」 관련 서지 정보를 조회하고 유사도 순으로 정렬하는 중입니다...`);
-
     if (t === 'web') {
       parseWebLink(q);
       return;
     }
 
     if (t === 'book') {
+      notifyCite(`「${q}」 도서를 교보문고·알라딘·Google Books·Apple Books 등에서 통합 조회하고 중복을 제거하는 중입니다...`);
       try {
-        const rawCandidates = await fetchBookCandidates(q);
-        if (rawCandidates.length) {
-          const ranked = rawCandidates
+        const dedupedCandidates = await fetchBookCandidates(q);
+        if (dedupedCandidates.length) {
+          const ranked = dedupedCandidates
             .map(item => ({ item, score: computeSimilarityScore(q, item) }))
             .sort((a, b) => b.score - a.score)
-            .slice(0, 8);
+            .slice(0, 10);
 
-          renderCandidates(ranked);
-          notifyCite(`유사도 순위 목록 ${ranked.length}건을 찾았습니다. 목록에서 원하는 도서를 클릭해 선택하세요.`);
+          renderCandidates(ranked, q);
+          applyCandidateRecord(ranked[0].item);
+          notifyCite(`중복 제거 후 ${ranked.length}건의 도서를 찾았습니다. 1순위 결과를 자동 반영했으며, 다른 판본은 목록에서 선택할 수 있습니다.`);
         } else {
-          notifyCite('검색 결과가 없습니다. 아래 입력칸에 서지 정보를 직접 입력해 주십시오.');
+          candidateBox.style.display = 'block';
+          candidateBox.innerHTML = `
+            <div class="candidate-head">
+              <div style="font-size:0.84rem; font-weight:900;">자동 조회 결과가 없습니다. 아래 서점·도서관에서 직접 확인 후 입력해 주세요:</div>
+              ${renderExternalSearchLinks(q)}
+            </div>
+          `;
+          notifyCite('검색 결과가 없습니다. 외부 서지 링크를 확인하거나 아래 입력칸에 직접 기재해 주십시오.');
         }
       } catch {
         notifyCite('서지 조회 중 네트워크 오류가 발생했습니다. 아래 입력칸에 수동으로 기재하십시오.');
@@ -743,12 +1021,13 @@
     }
 
     if (t === 'journal') {
+      notifyCite(`「${q}」 학술논문 서지 정보를 Crossref에서 조회하는 중입니다...`);
       try {
         const isDoi = /^10\.\d{4,9}\/[-._;()/:A-Z0-9]+$/i.test(q);
         const url = isDoi
           ? `https://api.crossref.org/works/${encodeURIComponent(q)}`
           : `https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=8`;
-        const res = await fetch(url);
+        const res = await fetchWithTimeout(url, {}, 5000);
         if (!res.ok) throw new Error();
         const json = await res.json();
         const rawItems = isDoi ? (json.message ? [json.message] : []) : (json.message?.items || []);
@@ -765,6 +1044,7 @@
             const iss = item.issue ? `(${item.issue})` : '';
             const pg = item.page || '';
             return {
+              sources: ['Crossref'],
               author: authors,
               year: String(year),
               title,
@@ -778,8 +1058,9 @@
             .map(item => ({ item, score: isDoi ? 99 : computeSimilarityScore(q, item) }))
             .sort((a, b) => b.score - a.score);
 
-          renderCandidates(ranked);
-          notifyCite(`논문 검색 결과 ${ranked.length}건을 유사도 순으로 표시했습니다. 선택 시 입력란에 반영됩니다.`);
+          renderCandidates(ranked, q);
+          applyCandidateRecord(ranked[0].item);
+          notifyCite(`논문 검색 결과 ${ranked.length}건을 찾았습니다. 1순위 논문을 자동 반영했습니다.`);
         } else {
           notifyCite('일치하는 논문 정보가 없습니다. 아래에 직접 입력해 주십시오.');
         }
@@ -796,6 +1077,7 @@
       const now = new Date();
       const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
       const rec = {
+        sources: ['URL 추출'],
         author: document.getElementById('meta-author').value.trim(),
         year: document.getElementById('meta-year').value.trim() || String(now.getFullYear()),
         title: document.getElementById('meta-title').value.trim() || u.hostname.replace(/^www\./, ''),
@@ -803,8 +1085,9 @@
         detail: dateStr,
         url: u.href
       };
-      renderCandidates([{ item: rec, score: 95 }]);
-      notifyCite('URL 정보를 추출했습니다. 아래 후보를 클릭해 반영하거나 제목/저자를 수정하세요.');
+      renderCandidates([{ item: rec, score: 95 }], raw);
+      applyCandidateRecord(rec);
+      notifyCite('URL 정보를 추출해 반영했습니다. 문서 제목과 작성자를 보완하세요.');
     } catch {
       notifyCite('유효하지 않은 URL 형식입니다. 주소를 다시 확인하십시오.');
     }
@@ -818,14 +1101,22 @@
   metaIds.forEach(id => document.getElementById(id).addEventListener('input', updateCitationPreview));
   citeStyle.addEventListener('change', updateCitationPreview);
 
-  function getFirstAuthorShort(authorStr) {
-    const first = String(authorStr || '저자미상').split(',')[0].trim();
-    return first || '저자미상';
+  function formatIntextAuthor(authorStr, style) {
+    const authors = String(authorStr || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    if (!authors.length) return '저자미상';
+    if (authors.length === 1) return authors[0];
+    if (authors.length === 2) {
+      return style === 'apa' ? `${authors[0]} & ${authors[1]}` : `${authors[0]}, ${authors[1]}`;
+    }
+    return hasKorean(authors[0]) ? `${authors[0]} 외` : `${authors[0]} et al.`;
   }
 
   function formatIntextCitation() {
     const s = citeStyle.value;
-    const author = getFirstAuthorShort(document.getElementById('meta-author').value);
+    const author = formatIntextAuthor(document.getElementById('meta-author').value, s);
     const year = document.getElementById('meta-year').value.trim() || 'n.d.';
     const title = document.getElementById('meta-title').value.trim();
     if (!title && !document.getElementById('meta-publisher').value.trim()) return '';
@@ -848,18 +1139,60 @@
     if (!title && !pub && !url) return '';
 
     if (s === 'klis') {
-      if (t === 'book') return `${author}. ${year}. 『${title}』. ${det ? det + ': ' : ''}${pub}.`;
-      if (t === 'journal') return `${author}. ${year}. "${title}." 『${pub}』, ${det}.${url ? ' ' + url : ''}`;
-      return `${author}. ${year}. "${title}." ${pub}. [인용일자: ${det || '2026년'}]. <${url}>.`;
+      if (t === 'book') {
+        const pubPart = [det, pub].filter(Boolean).join(': ');
+        return [`${author}.`, `${year}.`, title ? `『${title}』.` : '', pubPart ? `${pubPart}.` : '']
+          .filter(Boolean).join(' ');
+      }
+      if (t === 'journal') {
+        const journalPart = [pub ? `『${pub}』` : '', det].filter(Boolean).join(', ');
+        return [`${author}.`, `${year}.`, title ? `"${title}."` : '', journalPart ? `${journalPart}.` : '', url]
+          .filter(Boolean).join(' ');
+      }
+      const todayStr = `${new Date().getFullYear()}년`;
+      return [
+        `${author}.`,
+        `${year}.`,
+        title ? `"${title}."` : '',
+        pub ? `${pub}.` : '',
+        `[인용일자: ${det || todayStr}].`,
+        url ? `<${url}>.` : ''
+      ].filter(Boolean).join(' ');
     }
+
     if (s === 'apa') {
-      if (t === 'book') return `${author} (${year}). ${title}. ${pub}.${url ? ' ' + url : ''}`;
-      if (t === 'journal') return `${author} (${year}). ${title}. ${pub}, ${det}.${url ? ' ' + url : ''}`;
-      return `${author} (${year}). ${title}. ${pub}. ${det ? det + ' 검색, ' : ''}${url}`;
+      if (t === 'book') {
+        return [`${author} (${year}).`, title ? `${title}.` : '', pub ? `${pub}.` : '', url]
+          .filter(Boolean).join(' ');
+      }
+      if (t === 'journal') {
+        const journalPart = [pub, det].filter(Boolean).join(', ');
+        return [`${author} (${year}).`, title ? `${title}.` : '', journalPart ? `${journalPart}.` : '', url]
+          .filter(Boolean).join(' ');
+      }
+      return [
+        `${author} (${year}).`,
+        title ? `${title}.` : '',
+        pub ? `${pub}.` : '',
+        det ? `${det} 검색,` : '',
+        url
+      ].filter(Boolean).join(' ');
     }
-    if (t === 'book') return `${author}. ${title}. ${pub}, ${year}.`;
-    if (t === 'journal') return `${author}. "${title}." ${pub}, ${det}, ${year}${url ? ', ' + url : ''}.`;
-    return `${author}. "${title}." ${pub}, ${year}, ${url}. ${det ? det + ' 접속.' : ''}`;
+
+    // MLA 9판
+    if (t === 'book') {
+      const tail = [pub, year].filter(Boolean).join(', ');
+      return [`${author}.`, title ? `${title}.` : '', tail ? `${tail}.` : '']
+        .filter(Boolean).join(' ');
+    }
+    if (t === 'journal') {
+      const tail = [pub, det, year, url].filter(Boolean).join(', ');
+      return [`${author}.`, title ? `"${title}."` : '', tail ? `${tail}.` : '']
+        .filter(Boolean).join(' ');
+    }
+    const webTail = [pub, year, url].filter(Boolean).join(', ');
+    return [`${author}.`, title ? `"${title}."` : '', webTail ? `${webTail}.` : '', det ? `${det} 접속.` : '']
+      .filter(Boolean).join(' ');
   }
 
   function updateCitationPreview() {
@@ -871,22 +1204,48 @@
       intext ? `본문 내 인용: ${intext}` : '본문 내 인용: -';
   }
 
+  function copyTextSafe(text, successMsg) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text)
+        .then(() => notifyCite(successMsg))
+        .catch(() => fallbackCopy(text, successMsg));
+    } else {
+      fallbackCopy(text, successMsg);
+    }
+  }
+
+  function fallbackCopy(text, successMsg) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      notifyCite(successMsg);
+    } catch {
+      notifyCite('복사에 실패했습니다. 문장을 직접 드래그해 복사해 주세요.');
+    }
+    document.body.removeChild(ta);
+  }
+
   document.getElementById('btn-copy-cite').addEventListener('click', () => {
     const out = formatCitation();
-    if (!out) return showLibNotice('복사할 출처 문장이 없습니다.');
-    navigator.clipboard.writeText(out).then(() => notifyCite('클립보드에 참고문헌이 복사되었습니다.'));
+    if (!out) return notifyCite('복사할 출처 문장이 없습니다.');
+    copyTextSafe(out, '클립보드에 참고문헌이 복사되었습니다.');
   });
 
   document.getElementById('btn-copy-intext').addEventListener('click', () => {
     const intext = formatIntextCitation();
-    if (!intext) return showLibNotice('복사할 본문 내 인용이 없습니다.');
-    navigator.clipboard.writeText(intext).then(() => notifyCite(`본문 내 인용 "${intext}"을(를) 복사했습니다.`));
+    if (!intext) return notifyCite('복사할 본문 내 인용이 없습니다.');
+    copyTextSafe(intext, `본문 내 인용 "${intext}"을(를) 복사했습니다.`);
   });
 
   document.getElementById('btn-add-bib').addEventListener('click', () => {
     const out = formatCitation();
-    if (!out) return showLibNotice('추가할 출처 정보를 먼저 입력하십시오.');
-    if (bibItems.includes(out)) return showLibNotice('이미 목록에 추가된 참고문헌입니다.');
+    if (!out) return notifyCite('추가할 출처 정보를 먼저 입력하십시오.');
+    if (bibItems.includes(out)) return notifyCite('이미 목록에 추가된 참고문헌입니다.');
     bibItems.push(out);
     saveBib();
     renderBibList();
@@ -900,10 +1259,8 @@
   });
 
   document.getElementById('btn-copy-all').addEventListener('click', () => {
-    if (!bibItems.length) return;
-    navigator.clipboard.writeText(bibItems.join('\n')).then(() => {
-      notifyCite(`총 ${bibItems.length}건의 참고문헌 목록을 클립보드에 복사했습니다.`);
-    });
+    if (!bibItems.length) return notifyCite('복사할 누적 참고문헌 목록이 없습니다.');
+    copyTextSafe(bibItems.join('\n'), `총 ${bibItems.length}건의 참고문헌 목록을 클립보드에 복사했습니다.`);
   });
 
   document.getElementById('btn-clear-bib').addEventListener('click', () => {
