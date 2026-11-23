@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LIB-TEACHER // 출처 관리 페이지 (자동 참고문헌 생성기)</title>
+
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+
+  <style>
+    :root {
+      --bg: #fdfbf7;
+      --black: #111111;
+      --bg-card: #ffffff;
+      --bg-subtle: #f4f1ea;
+      --ink-muted: #4a4a4a;
+      --yellow: #ffd83b;
+      --pink: #ff4757;
+      --cyan: #48dbfb;
+      --green: #2ed573;
+      --border: 3px solid #111111;
+      --border-thick: 4px solid #111111;
+      --shadow-lg: 6px 6px 0px #111111;
+      --shadow-md: 4px 4px 0px #111111;
+      --shadow-sm: 2px 2px 0px #111111;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--black);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.55;
+      padding: 24px 16px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      border-bottom: var(--border-thick);
+    }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .brand-chip {
+      background: var(--black);
+      color: var(--cyan);
+      font-weight: 900;
+      font-size: 0.92rem;
+      padding: 4px 10px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border: var(--border);
+      background: #ffffff;
+      color: var(--black);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 900;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-link-btn.active { background: var(--cyan); }
+    .nav-link-btn.alt { background: var(--yellow); }
+
+    .hero-header {
+      background: var(--bg-card);
+      border: var(--border-thick);
+      box-shadow: var(--shadow-lg);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
+
+    .hero-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .brutal-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      border: var(--border);
+      background: var(--yellow);
+      color: var(--black);
+    }
+
+    .brutal-badge.sky { background: var(--cyan); }
+    .brutal-badge.green { background: var(--green); }
+
+    .hero-title {
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .hero-desc {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--ink-muted);
+    }
+
+    .brutal-card {
+      background: var(--bg-card);
+      border: var(--border-thick);
+      box-shadow: var(--shadow-lg);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+      border-bottom: var(--border);
+    }
+
+    .card-title {
+      font-size: 1.18rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+
+    @media (max-width: 860px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 11px 14px;
+      border: var(--border);
+      background: var(--bg-subtle);
+      color: var(--black);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 0;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      background: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 18px;
+      border: var(--border);
+      box-shadow: var(--shadow-md);
+      background: var(--bg-card);
+      color: var(--black);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 800;
+      cursor: pointer;
+      border-radius: 0;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+
+    .btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0px #111111; }
+    .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0px #111111; }
+
+    .btn-yellow { background: var(--yellow); }
+    .btn-sky { background: var(--cyan); }
+    .btn-green { background: var(--green); }
+    .btn-pink { background: var(--pink); color: #ffffff; }
+    .btn-sm { padding: 7px 12px; font-size: 0.82rem; box-shadow: var(--shadow-sm); }
+
+    .candidate-box {
+      display: none;
+      margin-top: 14px;
+      border: var(--border);
+      background: var(--bg-subtle);
+      padding: 12px 14px;
+    }
+
+    .candidate-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+      background: #ffffff;
+      border: 2px solid var(--black);
+      margin-top: 8px;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .cite-result-box {
+      background: var(--bg-subtle);
+      border: var(--border);
+      box-shadow: var(--shadow-md);
+      padding: 20px;
+      font-size: 1.02rem;
+      font-weight: 700;
+      line-height: 1.7;
+      min-height: 82px;
+      word-break: keep-all;
+    }
+
+    .intext-chip {
+      margin-top: 10px;
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: var(--ink-muted);
+    }
+
+    .cite-notice {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border: 2px solid var(--black);
+      background: var(--cyan);
+      font-size: 0.86rem;
+      font-weight: 800;
+      display: none;
+    }
+
+    .bib-list { list-style: none; margin-top: 14px; }
+
+    .bib-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border: var(--border);
+      background: var(--bg-subtle);
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    .bib-text { padding-left: 1.8em; text-indent: -1.8em; }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink-muted);
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-chip">LIB-TEACHER</span>
+      <span class="brutal-badge sky">02 · 출처 관리</span>
+    </div>
+    <nav class="nav-links" aria-label="페이지 이동">
+      <a href="index.html" class="nav-link-btn">⌂ 입장 페이지</a>
+      <a href="weeding.html" class="nav-link-btn alt">← 장서관리</a>
+      <a href="citation.html" class="nav-link-btn active">출처 관리</a>
+    </nav>
+  </header>
+
+  <section class="hero-header">
+    <div class="hero-badge-row">
+      <span class="brutal-badge sky">Google Books · Crossref DOI 연동</span>
+      <span class="brutal-badge green">한국문헌정보학회지 · APA · MLA</span>
+      <span class="brutal-badge">목록 자동 저장</span>
+    </div>
+    <h1 class="hero-title">수업·탐구용 자동 출처 생성기</h1>
+    <p class="hero-desc">
+      단행본, 학술논문, 웹자료의 서지 정보를 조회하거나 입력해 수업 배포용 참고문헌과 본문 내 인용을 생성합니다.
+    </p>
+  </section>
+
+  <section class="brutal-card">
+    <div class="card-header">
+      <h2 class="card-title">1. 자료 유형 선택 및 서지 정보 자동 조회</h2>
+      <span class="brutal-badge sky">다중 후보 선택 지원</span>
+    </div>
+
+    <div class="grid-2" style="margin-bottom: 16px;">
+      <div>
+        <label class="field-label" for="cite-type">자료 유형</label>
+        <select id="cite-type">
+          <option value="book">단행본 (도서명 또는 ISBN)</option>
+          <option value="journal">학술논문 (DOI 번호 또는 논문 제목)</option>
+          <option value="web">웹페이지 / 온라인 기사 (URL)</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="cite-style">참고문헌 표기 양식</label>
+        <select id="cite-style">
+          <option value="klis">한국문헌정보학회지 양식</option>
+          <option value="apa">APA 7판 양식</option>
+          <option value="mla">MLA 9판 양식</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="field-label" for="cite-query" id="cite-query-label">도서명 또는 ISBN 입력</label>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <input type="text" id="cite-query" placeholder="예: 학교도서관 운영 또는 9788976781857" style="flex: 1; min-width: 240px;" />
+      <button type="button" class="btn btn-yellow" id="btn-search-meta">메타데이터 자동 조회</button>
+    </div>
+
+    <div id="cite-notice" class="cite-notice"></div>
+    <div id="candidate-box" class="candidate-box"></div>
+
+    <div style="margin-top: 22px; padding-top: 18px; border-top: var(--border);">
+      <div class="grid-3">
+        <div>
+          <label class="field-label" for="meta-author">저자 / 작성자</label>
+          <input type="text" id="meta-author" placeholder="예: 홍길동, 김철수" />
+        </div>
+        <div>
+          <label class="field-label" for="meta-year">발행연도</label>
+          <input type="text" id="meta-year" placeholder="예: 2025" />
+        </div>
+        <div>
+          <label class="field-label" for="meta-title">자료명 (도서·논문·웹문서 제목)</label>
+          <input type="text" id="meta-title" placeholder="자료 제목 입력" />
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top: 14px;">
+        <div>
+          <label class="field-label" for="meta-publisher" id="meta-pub-label">출판사 / 학술지 / 사이트명</label>
+          <input type="text" id="meta-publisher" placeholder="예: 한국도서관협회" />
+        </div>
+        <div>
+          <label class="field-label" for="meta-detail" id="meta-det-label">발행지 (선택)</label>
+          <input type="text" id="meta-detail" placeholder="예: 서울 또는 58(1), 5-24" />
+        </div>
+        <div>
+          <label class="field-label" for="meta-url">URL 또는 DOI</label>
+          <input type="text" id="meta-url" placeholder="https://..." />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="brutal-card">
+    <div class="card-header">
+      <h2 class="card-title">2. 생성된 출처 및 참고문헌 목록 관리</h2>
+      <span class="brutal-badge" id="bib-badge">누적 0건</span>
+    </div>
+
+    <div id="cite-preview" class="cite-result-box">
+      자료 정보를 조회하거나 입력하면 선택한 양식의 참고문헌 문장이 실시간으로 생성됩니다.
+    </div>
+    <div class="intext-chip" id="intext-preview">본문 내 인용: -</div>
+
+    <div class="btn-row">
+      <button type="button" class="btn btn-yellow" id="btn-copy-cite">현재 출처 복사</button>
+      <button type="button" class="btn btn-sm" id="btn-copy-intext" style="padding: 11px 16px;">본문 내 인용 복사</button>
+      <button type="button" class="btn btn-sky" id="btn-add-bib">참고문헌 목록에 추가</button>
+    </div>
+
+    <div style="margin-top: 28px; padding-top: 18px; border-top: var(--border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <strong style="font-size: 1rem; font-weight: 900;">수업 배포용 누적 참고문헌 목록</strong>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-sm" id="btn-sort-bib">가나다/ABC 정렬</button>
+          <button type="button" class="btn btn-green btn-sm" id="btn-copy-all">전체 일괄 복사</button>
+          <button type="button" class="btn btn-pink btn-sm" id="btn-clear-bib">목록 초기화</button>
+        </div>
+      </div>
+
+      <ul id="bib-list" class="bib-list">
+        <li style="padding: 16px 0; font-weight: 700; color: var(--ink-muted);">추가된 참고문헌이 없습니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="footer-note">
+    LIB-TEACHER // <a href="index.html" style="color:inherit;">입장 페이지</a> · <a href="weeding.html" style="color:inherit;">장서관리 페이지</a>
+  </footer>
+</div>
+
+<script>
+  const BIB_STORAGE_KEY = 'lib_teacher_bib_v1';
+  const citeType = document.getElementById('cite-type');
+  const citeStyle = document.getElementById('cite-style');
+  const citeQuery = document.getElementById('cite-query');
+  const citeNotice = document.getElementById('cite-notice');
+  const candidateBox = document.getElementById('candidate-box');
+  const metaIds = ['meta-author', 'meta-year', 'meta-title', 'meta-publisher', 'meta-detail', 'meta-url'];
+
+  let bibItems = loadSavedBib();
+  renderBibList();
+
+  function loadSavedBib() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(BIB_STORAGE_KEY));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveBib() {
+    try {
+      localStorage.setItem(BIB_STORAGE_KEY, JSON.stringify(bibItems));
+    } catch {}
+  }
+
+  citeType.addEventListener('change', () => {
+    const t = citeType.value;
+    const qLabel = document.getElementById('cite-query-label');
+    const pLabel = document.getElementById('meta-pub-label');
+    const dLabel = document.getElementById('meta-det-label');
+
+    candidateBox.style.display = 'none';
+    candidateBox.innerHTML = '';
+
+    if (t === 'book') {
+      qLabel.textContent = '도서명 또는 ISBN 입력';
+      citeQuery.placeholder = '예: 학교도서관 운영 또는 9788976781857';
+      pLabel.textContent = '출판사';
+      dLabel.textContent = '발행지 (선택)';
+    } else if (t === 'journal') {
+      qLabel.textContent = 'DOI 번호 또는 논문 제목 입력';
+      citeQuery.placeholder = '예: 10.4275/KSLIS.2024.58.1.005';
+      pLabel.textContent = '학술지명';
+      dLabel.textContent = '권(호), 페이지';
+    } else {
+      qLabel.textContent = '웹페이지 또는 온라인 기사 URL 입력';
+      citeQuery.placeholder = '예: https://www.moe.go.kr/...';
+      pLabel.textContent = '웹사이트 / 언론사명';
+      dLabel.textContent = '인용(접속)일자';
+    }
+    updateCitationPreview();
+  });
+
+  document.getElementById('btn-search-meta').addEventListener('click', searchMetadata);
+  citeQuery.addEventListener('keydown', e => { if (e.key === 'Enter') searchMetadata(); });
+
+  function applyCandidateRecord(rec) {
+    document.getElementById('meta-author').value = rec.author || '';
+    document.getElementById('meta-year').value = rec.year || '';
+    document.getElementById('meta-title').value = rec.title || '';
+    document.getElementById('meta-publisher').value = rec.publisher || '';
+    document.getElementById('meta-detail').value = rec.detail || '';
+    document.getElementById('meta-url').value = rec.url || '';
+    updateCitationPreview();
+  }
+
+  function renderCandidates(list) {
+    if (!list.length) {
+      candidateBox.style.display = 'none';
+      candidateBox.innerHTML = '';
+      return;
+    }
+    candidateBox.style.display = 'block';
+    candidateBox.innerHTML = `<div style="font-size:0.82rem; font-weight:900;">조회 결과 ${list.length}건 — 원하는 자료를 선택해 입력란에 반영하세요:</div>`;
+
+    list.forEach(rec => {
+      const row = document.createElement('div');
+      row.className = 'candidate-item';
+      row.innerHTML = `
+        <div>
+          <div>${esc(rec.title || '제목 미상')} <span style="color:var(--ink-muted);">(${esc(rec.year || '연도 미상')})</span></div>
+          <div style="font-size:0.78rem; color:var(--ink-muted);">${esc(rec.author || '저자 미상')} · ${esc(rec.publisher || '')}</div>
+        </div>
+        <button type="button" class="btn btn-yellow btn-sm">선택</button>
+      `;
+      row.querySelector('button').addEventListener('click', () => {
+        applyCandidateRecord(rec);
+        notifyCite(`「${rec.title}」 서지 정보를 반영했습니다.`);
+      });
+      candidateBox.appendChild(row);
+    });
+  }
+
+  async function searchMetadata() {
+    const t = citeType.value;
+    const q = citeQuery.value.trim();
+    candidateBox.style.display = 'none';
+    candidateBox.innerHTML = '';
+
+    if (!q) {
+      notifyCite('조회할 도서명, DOI 또는 URL을 입력하십시오.');
+      return;
+    }
+
+    notifyCite('서지 데이터베이스에서 정보를 조회하고 있습니다...');
+
+    if (t === 'web') {
+      parseWebLink(q);
+      return;
+    }
+
+    if (t === 'book') {
+      try {
+        const isbn = q.replace(/[^0-9Xx]/g, '');
+        const param = (isbn.length === 10 || isbn.length === 13) ? `isbn:${isbn}` : encodeURIComponent(q);
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${param}&maxResults=5`);
+        const json = await res.json();
+
+        if (json.items && json.items.length) {
+          const candidates = json.items.map(it => {
+            const info = it.volumeInfo || {};
+            return {
+              author: (info.authors || []).join(', '),
+              year: (info.publishedDate || '').slice(0, 4),
+              title: info.title || '',
+              publisher: info.publisher || '',
+              detail: '',
+              url: info.infoLink || ''
+            };
+          });
+          applyCandidateRecord(candidates[0]);
+          if (candidates.length > 1) renderCandidates(candidates);
+          notifyCite(`도서 서지 정보를 불러왔습니다: 「${candidates[0].title}」`);
+        } else {
+          notifyCite('검색 결과가 없습니다. 아래 입력칸에 서지 정보를 직접 입력해 주십시오.');
+        }
+      } catch {
+        notifyCite('서지 조회 중 네트워크 오류가 발생했습니다. 아래 입력칸에 수동으로 기재하십시오.');
+      }
+      return;
+    }
+
+    if (t === 'journal') {
+      try {
+        const isDoi = /^10\.\d{4,9}\/[-._;()/:A-Z0-9]+$/i.test(q);
+        const url = isDoi
+          ? `https://api.crossref.org/works/${encodeURIComponent(q)}`
+          : `https://api.crossref.org/works?query=${encodeURIComponent(q)}&rows=5`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error();
+        const json = await res.json();
+        const rawItems = isDoi ? (json.message ? [json.message] : []) : (json.message?.items || []);
+
+        if (rawItems.length) {
+          const candidates = rawItems.map(item => {
+            const authors = (item.author || []).map(a =>
+              a.family && a.given ? `${a.family}, ${a.given}` : (a.family || a.name || '')
+            ).join(', ');
+            const year = item.published?.['date-parts']?.[0]?.[0] || '';
+            const title = Array.isArray(item.title) ? item.title[0] : (item.title || '');
+            const journal = Array.isArray(item['container-title']) ? item['container-title'][0] : '';
+            const vol = item.volume || '';
+            const iss = item.issue ? `(${item.issue})` : '';
+            const pg = item.page || '';
+            return {
+              author: authors,
+              year: String(year),
+              title,
+              publisher: journal,
+              detail: `${vol}${iss}${pg ? ', ' + pg : ''}`,
+              url: item.DOI ? `https://doi.org/${item.DOI}` : ''
+            };
+          });
+          applyCandidateRecord(candidates[0]);
+          if (candidates.length > 1) renderCandidates(candidates);
+          notifyCite(`학술논문 정보를 불러왔습니다: 「${candidates[0].title}」`);
+        } else {
+          notifyCite('일치하는 논문 정보가 없습니다. 아래에 직접 입력해 주십시오.');
+        }
+      } catch {
+        notifyCite('DOI/논문 조회에 실패했습니다. 아래 입력칸에 수동으로 기재하십시오.');
+      }
+    }
+  }
+
+  function parseWebLink(raw) {
+    const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    try {
+      const u = new URL(normalized);
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
+      document.getElementById('meta-url').value = u.href;
+      document.getElementById('meta-publisher').value = u.hostname.replace(/^www\./, '');
+      document.getElementById('meta-detail').value = dateStr;
+      if (!document.getElementById('meta-year').value) {
+        document.getElementById('meta-year').value = String(now.getFullYear());
+      }
+      notifyCite('URL 도메인 및 접속일자를 자동 설정했습니다. 웹문서 제목과 작성자를 입력하십시오.');
+      updateCitationPreview();
+    } catch {
+      notifyCite('유효하지 않은 URL 형식입니다. 주소를 다시 확인하십시오.');
+    }
+  }
+
+  function notifyCite(msg) {
+    citeNotice.style.display = 'block';
+    citeNotice.textContent = msg;
+  }
+
+  metaIds.forEach(id => document.getElementById(id).addEventListener('input', updateCitationPreview));
+  citeStyle.addEventListener('change', updateCitationPreview);
+
+  function getFirstAuthorShort(authorStr) {
+    const first = String(authorStr || '저자미상').split(',')[0].trim();
+    return first || '저자미상';
+  }
+
+  function formatIntextCitation() {
+    const s = citeStyle.value;
+    const author = getFirstAuthorShort(document.getElementById('meta-author').value);
+    const year = document.getElementById('meta-year').value.trim() || 'n.d.';
+    const title = document.getElementById('meta-title').value.trim();
+    if (!title && !document.getElementById('meta-publisher').value.trim()) return '';
+
+    if (s === 'apa') return `(${author}, ${year})`;
+    if (s === 'mla') return `(${author})`;
+    return `(${author} ${year})`;
+  }
+
+  function formatCitation() {
+    const t = citeType.value;
+    const s = citeStyle.value;
+    const author = document.getElementById('meta-author').value.trim() || '저자미상';
+    const year = document.getElementById('meta-year').value.trim() || '연도미상';
+    const title = document.getElementById('meta-title').value.trim();
+    const pub = document.getElementById('meta-publisher').value.trim();
+    const det = document.getElementById('meta-detail').value.trim();
+    const url = document.getElementById('meta-url').value.trim();
+
+    if (!title && !pub && !url) return '';
+
+    if (s === 'klis') {
+      if (t === 'book') return `${author}. ${year}. 『${title}』. ${det ? det + ': ' : ''}${pub}.`;
+      if (t === 'journal') return `${author}. ${year}. "${title}." 『${pub}』, ${det}.${url ? ' ' + url : ''}`;
+      return `${author}. ${year}. "${title}." ${pub}. [인용일자: ${det || '2026년'}]. <${url}>.`;
+    }
+    if (s === 'apa') {
+      if (t === 'book') return `${author} (${year}). ${title}. ${pub}.${url ? ' ' + url : ''}`;
+      if (t === 'journal') return `${author} (${year}). ${title}. ${pub}, ${det}.${url ? ' ' + url : ''}`;
+      return `${author} (${year}). ${title}. ${pub}. ${det ? det + ' 검색, ' : ''}${url}`;
+    }
+    if (t === 'book') return `${author}. ${title}. ${pub}, ${year}.`;
+    if (t === 'journal') return `${author}. "${title}." ${pub}, ${det}, ${year}${url ? ', ' + url : ''}.`;
+    return `${author}. "${title}." ${pub}, ${year}, ${url}. ${det ? det + ' 접속.' : ''}`;
+  }
+
+  function updateCitationPreview() {
+    const out = formatCitation();
+    const intext = formatIntextCitation();
+    document.getElementById('cite-preview').textContent =
+      out || '자료 정보를 조회하거나 입력하면 선택한 양식의 참고문헌 문장이 실시간으로 생성됩니다.';
+    document.getElementById('intext-preview').textContent =
+      intext ? `본문 내 인용: ${intext}` : '본문 내 인용: -';
+  }
+
+  document.getElementById('btn-copy-cite').addEventListener('click', () => {
+    const out = formatCitation();
+    if (!out) return alert('복사할 출처 문장이 없습니다.');
+    navigator.clipboard.writeText(out).then(() => notifyCite('클립보드에 참고문헌이 복사되었습니다.'));
+  });
+
+  document.getElementById('btn-copy-intext').addEventListener('click', () => {
+    const intext = formatIntextCitation();
+    if (!intext) return alert('복사할 본문 내 인용이 없습니다.');
+    navigator.clipboard.writeText(intext).then(() => notifyCite(`본문 내 인용 "${intext}"을(를) 복사했습니다.`));
+  });
+
+  document.getElementById('btn-add-bib').addEventListener('click', () => {
+    const out = formatCitation();
+    if (!out) return alert('추가할 출처 정보를 먼저 입력하십시오.');
+    if (bibItems.includes(out)) return alert('이미 목록에 추가된 참고문헌입니다.');
+    bibItems.push(out);
+    saveBib();
+    renderBibList();
+    notifyCite('누적 참고문헌 목록에 추가했습니다.');
+  });
+
+  document.getElementById('btn-sort-bib').addEventListener('click', () => {
+    bibItems.sort((a, b) => a.localeCompare(b, 'ko'));
+    saveBib();
+    renderBibList();
+  });
+
+  document.getElementById('btn-copy-all').addEventListener('click', () => {
+    if (!bibItems.length) return;
+    navigator.clipboard.writeText(bibItems.join('\n')).then(() => {
+      notifyCite(`총 ${bibItems.length}건의 참고문헌 목록을 클립보드에 복사했습니다.`);
+    });
+  });
+
+  document.getElementById('btn-clear-bib').addEventListener('click', () => {
+    bibItems = [];
+    saveBib();
+    renderBibList();
+  });
+
+  function renderBibList() {
+    const ul = document.getElementById('bib-list');
+    document.getElementById('bib-badge').textContent = `누적 ${bibItems.length}건`;
+
+    if (!bibItems.length) {
+      ul.innerHTML = `<li style="padding: 16px 0; font-weight: 700; color: var(--ink-muted);">추가된 참고문헌이 없습니다.</li>`;
+      return;
+    }
+
+    ul.innerHTML = '';
+    bibItems.forEach((text, idx) => {
+      const li = document.createElement('li');
+      li.className = 'bib-row';
+      li.innerHTML = `
+        <div class="bib-text">${esc(text)}</div>
+        <button type="button" class="btn btn-pink btn-sm">삭제</button>
+      `;
+      li.querySelector('button').addEventListener('click', () => {
+        bibItems.splice(idx, 1);
+        saveBib();
+        renderBibList();
+      });
+      ul.appendChild(li);
+    });
+  }
+
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+
+</body>
+</html>
