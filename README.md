@@ -4,7 +4,7 @@
 
 학교도서관 사서교사의 장서 제적(폐기) 업무와 독서·정보활용교육 수업 자료용 참고문헌 생성을 한곳에서 처리할 수 있는 아카이브 워크스테이션입니다. 입장 페이지(`index.html`)를 통해 **장서관리 페이지(`weeding.html`)**와 **출처 관리 페이지(`citation.html`)**로 진입하여 통계 파일 판별·법정 상한 대조·사유서 출력부터 서지 조회·참고문헌 및 본문 인용 생성·목록 관리까지 완결할 수 있습니다.
 
-- **배포 URL:** `https://nlasdnfkl2.github.io/LibTEACHER_plus/`
+- **배포 URL:** <https://nlasdnfkl2.github.io/LibTEACHER_plus/>
 
 ---
 
