@@ -1,0 +1,293 @@
+/* LIB-TEACHER 공통 스타일 (커스텀 커서 · 빛 블러 · 애니메이션 · 카피레프트) */
+:root {
+  --bg: #fdfbf7;
+  --black: #111111;
+  --bg-card: #ffffff;
+  --bg-subtle: #f4f1ea;
+  --ink-muted: #4a4a4a;
+  --yellow: #ffd83b;
+  --pink: #ff4757;
+  --cyan: #48dbfb;
+  --green: #2ed573;
+  --border: 3px solid #111111;
+  --border-thick: 4px solid #111111;
+  --shadow-lg: 6px 6px 0px #111111;
+  --shadow-md: 4px 4px 0px #111111;
+  --shadow-sm: 2px 2px 0px #111111;
+  --mouse-x: 50vw;
+  --mouse-y: 50vh;
+}
+
+@media (pointer: fine) {
+  body.lib-common-ready,
+  body.lib-common-ready a,
+  body.lib-common-ready button,
+  body.lib-common-ready label.dropzone,
+  body.lib-common-ready .copyleft-badge {
+    cursor: none;
+  }
+}
+
+/* 미세 격자 배경 & 마우스 주변 빛 블러 */
+.lib-grid-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(to right, rgba(17, 17, 17, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(17, 17, 17, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.cursor-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    260px circle at var(--mouse-x) var(--mouse-y),
+    rgba(72, 219, 251, 0.22),
+    rgba(255, 216, 59, 0.13) 45%,
+    transparent 72%
+  );
+  filter: blur(18px);
+}
+
+/* 커스텀 커서 */
+.custom-cursor,
+.custom-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  display: none;
+}
+
+@media (pointer: fine) {
+  body.lib-common-ready .custom-cursor,
+  body.lib-common-ready .custom-cursor-ring {
+    display: block;
+  }
+}
+
+.custom-cursor {
+  width: 14px;
+  height: 14px;
+  background: var(--black);
+  border: 2px solid #ffffff;
+  box-shadow: 2px 2px 0 var(--black);
+  transition: transform 0.12s ease, background-color 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+.custom-cursor-ring {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--black);
+  background: rgba(255, 216, 59, 0.18);
+  transition: width 0.18s ease, height 0.18s ease, background-color 0.18s ease;
+}
+
+body.is-hovering .custom-cursor {
+  width: 18px;
+  height: 18px;
+  background: var(--green);
+}
+
+body.is-hovering .custom-cursor-ring {
+  width: 48px;
+  height: 48px;
+  background: rgba(46, 213, 115, 0.22);
+}
+
+body.is-clicking .custom-cursor {
+  transform: translate(-50%, -50%) scale(0.75);
+}
+
+body.is-clicking .custom-cursor-ring {
+  width: 26px;
+  height: 26px;
+  background: rgba(255, 71, 87, 0.22);
+}
+
+/* 공통 애니메이션 */
+@keyframes libPopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.005);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes libPulseDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.65; }
+}
+
+@keyframes libFloatSlow {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50% { transform: translateY(-3px) rotate(1deg); }
+}
+
+.anim-pop {
+  animation: libPopIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anim-pop-delay {
+  animation: libPopIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--black);
+  border-radius: 50%;
+  animation: libPulseDot 1.6s infinite ease-in-out;
+}
+
+/* 버튼 광택 스윕 */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 65%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.42),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.45s ease;
+  pointer-events: none;
+}
+
+.btn-shine:hover::before {
+  left: 140%;
+}
+
+/* 공통 카피레프트 푸터 */
+.copyleft-footer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.copyleft-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--black);
+  color: #ffffff;
+  border: var(--border);
+  box-shadow: var(--shadow-md);
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.copyleft-badge:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--black);
+}
+
+.copyleft-badge.unlocked {
+  background: #1d1b26;
+  animation: libFloatSlow 2.6s ease-in-out infinite;
+}
+
+.copyleft-symbol {
+  display: inline-block;
+  transform: scaleX(-1);
+  font-size: 0.95rem;
+  line-height: 1;
+  transition: transform 0.3s ease;
+}
+
+.copyleft-badge:hover .copyleft-symbol {
+  transform: scaleX(-1) rotate(25deg);
+}
+
+/* 공통 개구리 이스터에그 토스트 */
+.frog-easter-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  max-width: 320px;
+  background: var(--yellow);
+  color: var(--black);
+  border: var(--border-thick);
+  box-shadow: var(--shadow-lg);
+  padding: 14px 16px;
+  z-index: 9500;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.45;
+  transform: translateY(140%);
+  opacity: 0;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
+}
+
+.frog-easter-toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.frog-ascii {
+  display: block;
+  margin-top: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  background: #ffffff;
+  border: 2px solid var(--black);
+  padding: 6px 8px;
+  white-space: pre;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-glow,
+  .custom-cursor,
+  .custom-cursor-ring,
+  .anim-pop,
+  .anim-pop-delay,
+  .live-dot,
+  .copyleft-badge.unlocked,
+  .frog-easter-toast {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media print {
+  .lib-grid-bg,
+  .cursor-glow,
+  .custom-cursor,
+  .custom-cursor-ring,
+  .copyleft-footer,
+  .frog-easter-toast {
+    display: none !important;
+  }
+}

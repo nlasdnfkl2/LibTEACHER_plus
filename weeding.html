@@ -6,26 +6,10 @@
   <title>LIB-TEACHER // 장서관리 페이지 (제적 판별 및 사유서)</title>
 
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <link rel="stylesheet" href="common.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
-    :root {
-      --bg: #fdfbf7;
-      --black: #111111;
-      --bg-card: #ffffff;
-      --bg-subtle: #f4f1ea;
-      --ink-muted: #4a4a4a;
-      --yellow: #ffd83b;
-      --pink: #ff4757;
-      --cyan: #48dbfb;
-      --green: #2ed573;
-      --border: 3px solid #111111;
-      --border-thick: 4px solid #111111;
-      --shadow-lg: 6px 6px 0px #111111;
-      --shadow-md: 4px 4px 0px #111111;
-      --shadow-sm: 2px 2px 0px #111111;
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
@@ -39,11 +23,15 @@
       line-height: 1.55;
       padding: 24px 16px 80px;
       -webkit-font-smoothing: antialiased;
+      position: relative;
+      overflow-x: hidden;
     }
 
     .container {
       max-width: 1120px;
       margin: 0 auto;
+      position: relative;
+      z-index: 1;
     }
 
     .topbar {
@@ -370,14 +358,6 @@
 
     .tag-pill.rec { background: var(--yellow); }
 
-    .footer-note {
-      text-align: center;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--ink-muted);
-      margin-top: 24px;
-    }
-
     @media print {
       body { background: #ffffff; padding: 0; }
       .topbar,
@@ -385,16 +365,20 @@
       #upload-card,
       #criteria-card,
       .filter-bar,
-      .cap-adjust-bar,
-      .footer-note { display: none !important; }
+      .cap-adjust-bar { display: none !important; }
       .brutal-card { box-shadow: none; border: 2px solid #111111; padding: 14px; }
     }
   </style>
 </head>
 <body>
 
+<div class="lib-grid-bg" aria-hidden="true"></div>
+<div class="cursor-glow" aria-hidden="true"></div>
+<div class="custom-cursor" aria-hidden="true"></div>
+<div class="custom-cursor-ring" aria-hidden="true"></div>
+
 <div class="container">
-  <header class="topbar">
+  <header class="topbar anim-pop">
     <div class="topbar-brand">
       <span class="brand-chip">LIB-TEACHER</span>
       <span class="brutal-badge">01 · 장서관리</span>
@@ -406,7 +390,7 @@
     </nav>
   </header>
 
-  <section class="hero-header">
+  <section class="hero-header anim-pop">
     <div class="hero-badge-row">
       <span class="brutal-badge">도서관법 시행령 7% 상한 대조</span>
       <span class="brutal-badge green">KLA 학교도서관 기준</span>
@@ -419,7 +403,7 @@
   </section>
 
   <!-- 1. File Upload Card -->
-  <section class="brutal-card" id="upload-card">
+  <section class="brutal-card anim-pop-delay" id="upload-card">
     <div class="card-header">
       <h2 class="card-title">1. 장서 및 대출 통계 업로드</h2>
       <span class="brutal-badge sky">CSV · XLSX · XLS 지원</span>
@@ -432,7 +416,7 @@
     </div>
 
     <div class="btn-row">
-      <button type="button" class="btn btn-yellow" id="btn-load-sample">
+      <button type="button" class="btn btn-yellow btn-shine" id="btn-load-sample">
         샘플 데이터 불러오기 (정상 + 이상치 포함)
       </button>
       <button type="button" class="btn" id="btn-download-template">
@@ -447,7 +431,7 @@
   </section>
 
   <!-- 2. Criteria Card -->
-  <section class="brutal-card" id="criteria-card">
+  <section class="brutal-card anim-pop-delay" id="criteria-card">
     <div class="card-header">
       <h2 class="card-title">2. 법령 및 KLA 폐기 판별 기준 설정</h2>
       <span class="brutal-badge">도서관법 시행령 제적 상한 7%</span>
@@ -490,7 +474,7 @@
     </div>
 
     <div class="btn-row">
-      <button type="button" class="btn btn-sky" id="btn-reanalyze">
+      <button type="button" class="btn btn-sky btn-shine" id="btn-reanalyze">
         설정 기준으로 폐기 대상 재분석 실행
       </button>
     </div>
@@ -587,11 +571,21 @@
     </div>
   </section>
 
-  <footer class="footer-note">
-    LIB-TEACHER // <a href="index.html" style="color:inherit;">입장 페이지</a> · <a href="citation.html" style="color:inherit;">출처 관리 페이지</a>
+  <footer class="copyleft-footer" aria-label="카피레프트 표기">
+    <span class="copyleft-badge" id="copyleftBadge" title="5번 클릭하거나 'frog'를 입력해 보세요">
+      <span class="copyleft-symbol" aria-hidden="true">©</span>
+      <span>COPYLEFT 태양</span>
+    </span>
   </footer>
 </div>
 
+<aside class="frog-easter-toast" id="frogToast" role="status" aria-live="polite">
+  <div>🐸 <strong>개구리 사서 모드 발견!</strong> 오래된 장서는 정리하고, 튼튼한 출처만 남기는 중.</div>
+  <span class="frog-ascii">  @..@       (o  o)
+ ( >__< )     ^^  ^^   개굴!</span>
+</aside>
+
+<script src="common.js"></script>
 <script>
   let rawBooks = [];
   let analyzedBooks = [];
@@ -659,9 +653,12 @@
   });
 
   document.getElementById('btn-download-template').addEventListener('click', () => {
-    const csv = '\uFEFF등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태\n' +
-      'EM00001,813.6,메밀꽃 필 무렵,이효석,문학과지성사,2012,0,정상\n' +
-      'EM00002,400,최신 과학 트렌드 2011,김과학,과학출판사,2011,1,오훼손\n';
+    const csv = '﻿등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태
+' +
+      'EM00001,813.6,메밀꽃 필 무렵,이효석,문학과지성사,2012,0,정상
+' +
+      'EM00002,400,최신 과학 트렌드 2011,김과학,과학출판사,2011,1,오훼손
+';
     triggerDownload(csv, '학교도서관_장서분석_표준양식.csv', 'text/csv;charset=utf-8;');
   });
 
@@ -975,7 +972,8 @@
     const rows = buildWeedingReportRows(selected);
     const headers = Object.keys(rows[0]);
     const csvLines = rows.map(r => headers.map(h => `"${String(r[h]).replace(/"/g, '""')}"`).join(','));
-    const csv = '\uFEFF' + [headers.join(','), ...csvLines].join('\n');
+    const csv = '﻿' + [headers.join(','), ...csvLines].join('
+');
     const dateStr = new Date().toISOString().slice(0, 10);
     triggerDownload(csv, `학교도서관_장서제적_사유서_${dateStr}.csv`, 'text/csv;charset=utf-8;');
   });

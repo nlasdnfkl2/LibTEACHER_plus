@@ -4,19 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LIB-TEACHER // 학교도서관 장서 및 출처 관리 입장</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="common.css">
   <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
-    
-    :root {
-      --bg: #fdfbf7;
-      --black: #111111;
-      --border: 3px solid var(--black);
-      --border-thick: 4px solid var(--black);
-      --yellow: #ffd83b;
-      --cyan: #48dbfb;
-      --green: #2ed573;
-    }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -30,26 +20,53 @@
       justify-content: center;
       padding: 24px;
       gap: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .top-banner,
+    .launcher {
+      width: 100%;
+      max-width: 600px;
+      position: relative;
+      z-index: 1;
     }
 
     .top-banner {
-      width: 100%;
-      max-width: 600px;
       background: #ffffff;
       border: var(--border-thick);
-      box-shadow: 6px 6px 0 var(--black);
+      box-shadow: var(--shadow-lg);
       padding: 18px 22px;
       text-align: center;
     }
 
+    .top-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
     .top-pill {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       background: var(--green);
       border: 2px solid var(--black);
       padding: 2px 10px;
       font-size: 0.78rem;
       font-weight: 900;
-      margin-bottom: 8px;
+    }
+
+    .desk-tag {
+      display: inline-block;
+      background: #f3efe6;
+      border: 2px solid var(--black);
+      padding: 2px 9px;
+      font-size: 0.75rem;
+      font-weight: 800;
     }
 
     .top-title {
@@ -66,8 +83,6 @@
     }
 
     .launcher {
-      width: 100%;
-      max-width: 600px;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 24px;
@@ -89,7 +104,7 @@
       text-decoration: none;
       color: var(--black);
       text-align: center;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.16s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .nav-btn.weeding { background: var(--yellow); }
@@ -112,6 +127,11 @@
       font-weight: 900;
       padding: 3px 10px;
       letter-spacing: 0.04em;
+      transition: transform 0.15s ease;
+    }
+
+    .nav-btn:hover .nav-tag {
+      transform: scale(1.06) rotate(-2deg);
     }
 
     .nav-title {
@@ -125,63 +145,63 @@
       color: #222222;
     }
 
-    .copyleft-footer {
-      width: 100%;
-      max-width: 600px;
-      display: flex;
-      justify-content: center;
+    .nav-shortcut {
       margin-top: 4px;
-    }
-
-    .copyleft-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--black);
-      color: #ffffff;
-      border: var(--border);
-      box-shadow: 4px 4px 0 var(--black);
-      padding: 7px 14px;
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       font-weight: 800;
-      letter-spacing: 0.04em;
-    }
-
-    .copyleft-symbol {
-      display: inline-block;
-      transform: scaleX(-1);
-      font-size: 0.95rem;
-      line-height: 1;
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 2px solid var(--black);
     }
   </style>
 </head>
 <body>
-  <header class="top-banner">
-    <span class="top-pill">LIB-TEACHER v1.1</span>
+  <div class="lib-grid-bg" aria-hidden="true"></div>
+  <div class="cursor-glow" aria-hidden="true"></div>
+  <div class="custom-cursor" aria-hidden="true"></div>
+  <div class="custom-cursor-ring" aria-hidden="true"></div>
+
+  <header class="top-banner anim-pop">
+    <div class="top-meta-row">
+      <span class="top-pill">
+        <span class="live-dot" aria-hidden="true"></span>
+        LIB-TEACHER v1.1
+      </span>
+      <span class="desk-tag">DDC · 제적 7% 상한 · 참고문헌</span>
+    </div>
     <h1 class="top-title">학교도서관 장서 제적 판별 &amp; 출처 관리</h1>
-    <p class="top-sub">원하는 작업 공간을 선택해 입장하세요.</p>
+    <p class="top-sub">원하는 작업 공간을 선택해 입장하세요. <span style="opacity:0.75;">(키보드 1 / 2 단축키 지원)</span></p>
   </header>
 
-  <nav class="launcher" aria-label="작업 페이지 선택">
-    <a href="weeding.html" class="nav-btn weeding">
+  <nav class="launcher anim-pop-delay" aria-label="작업 페이지 선택">
+    <a href="weeding.html" class="nav-btn weeding btn-shine" data-hotkey="1">
       <span class="nav-tag">COLLECTION</span>
       <span class="nav-title">장서관리 페이지</span>
       <span class="nav-desc">제적 판별 · 7% 상한 · 사유서 출력</span>
+      <span class="nav-shortcut">KEY [1]</span>
     </a>
-    <a href="citation.html" class="nav-btn citation">
+    <a href="citation.html" class="nav-btn citation btn-shine" data-hotkey="2">
       <span class="nav-tag">CITATION</span>
       <span class="nav-title">출처 관리 페이지</span>
       <span class="nav-desc">도서/DOI 조회 · 참고문헌 목록</span>
+      <span class="nav-shortcut">KEY [2]</span>
     </a>
   </nav>
 
-  <footer class="copyleft-footer" aria-label="카피레프트 표기">
-    <span class="copyleft-badge">
+  <footer class="copyleft-footer anim-pop-delay" aria-label="카피레프트 표기">
+    <span class="copyleft-badge" id="copyleftBadge" title="5번 클릭하거나 'frog'를 입력해 보세요">
       <span class="copyleft-symbol" aria-hidden="true">©</span>
       <span>COPYLEFT 태양</span>
     </span>
   </footer>
 
+  <aside class="frog-easter-toast" id="frogToast" role="status" aria-live="polite">
+    <div>🐸 <strong>개구리 사서 모드 발견!</strong> 오래된 장서는 정리하고, 튼튼한 출처만 남기는 중.</div>
+    <span class="frog-ascii">  @..@       (o  o)
+ ( >__< )     ^^  ^^   개굴!</span>
+  </aside>
+
+  <script src="common.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
     const targetPage = params.get('page');
@@ -190,6 +210,12 @@
     } else if (targetPage === 'citation') {
       window.location.replace('citation.html');
     }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === '1') window.location.href = 'weeding.html';
+      if (e.key === '2') window.location.href = 'citation.html';
+    });
   </script>
 </body>
 </html>
