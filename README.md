@@ -56,3 +56,4 @@ LibTEACHER_plus/
 ├── common.css                 # Neo-Brutalism 공통 스타일, 커스텀 셀렉트/팝업, 커서·애니메이션·푸터
 ├── common.js                  # 커스텀 커서/빛 블러, 커스텀 드롭다운 제어, 이스터에그 로직
 └── README.md                  # 프로젝트 개요 및 완료 기능 정리
+```

@@ -124,7 +124,7 @@
     .special-chip-btn {
       display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border: 2px solid var(--black);
       background: var(--bg-subtle); color: var(--black); font-size: 0.76rem; font-weight: 900; cursor: pointer;
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-sm); user-select: none;
     }
     .special-chip-btn.is-special { background: var(--cyan); }
 
@@ -222,11 +222,11 @@
     </div>
 
     <div class="btn-row">
-      <button type="button" class="btn btn-yellow btn-shine" id="btn-load-sample">
-        샘플 데이터 불러오기 (정상 + 이상치 + 특별도서 포함)
-      </button>
       <button type="button" class="btn btn-green btn-shine" id="btn-add-sheet-row">
         + 시트 행 추가
+      </button>
+      <button type="button" class="btn btn-pink btn-shine" id="btn-clear-sheet">
+        시트 전체 비우기
       </button>
       <button type="button" class="btn" id="btn-download-template">
         표준 CSV 양식 다운로드
@@ -235,7 +235,7 @@
 
     <div class="excel-sheet-toolbar">
       <div style="font-size:0.86rem; font-weight:900;">
-        📊 커스텀 장서 시트 — 셀을 클릭해 바로 수정하세요. <span class="tag-pill special">★ 특별도서(폐기 X)</span> 체크 시 폐기 대상에서 제외됩니다.
+        📊 커스텀 장서 시트 — 셀을 클릭해 바로 입력하세요. <span class="tag-pill special">★ 특별도서(폐기 X)</span> 클릭 시 폐기 대상에서 제외됩니다.
       </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-sky btn-sm" id="btn-apply-sheet-analyze">시트 내용으로 재판별</button>
@@ -427,6 +427,39 @@
 <script>
   let rawBooks = [];
   let analyzedBooks = [];
+  let uidCounter = 1;
+
+  function createEmptyBookRow(indexNum) {
+    const uid = `book_${Date.now()}_${uidCounter++}`;
+    return {
+      _uid: uid,
+      id: `EM${String(indexNum).padStart(5, '0')}`,
+      kdc: '',
+      kdcMain: '0',
+      title: '',
+      author: '',
+      publisher: '',
+      pubYear: null,
+      loans: 0,
+      status: '정상',
+      isSpecial: false,
+      recommended: false,
+      checked: false,
+      reasons: [],
+      customNote: ''
+    };
+  }
+
+  function initBlankSheet(rowCount = 5) {
+    rawBooks = [];
+    analyzedBooks = [];
+    for (let i = 1; i <= rowCount; i++) {
+      rawBooks.push(createEmptyBookRow(i));
+    }
+    renderSheetGrid();
+    document.getElementById('result-section').style.display = 'none';
+    document.getElementById('validation-box').style.display = 'none';
+  }
 
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('file-input');
@@ -468,45 +501,29 @@
     reader.readAsArrayBuffer(file);
   }
 
-  function getSampleData() {
-    return [
-    ];
-  }
-
-  document.getElementById('btn-load-sample').addEventListener('click', () => {
-    processRawRows(getSampleData(), 'sample_books.csv');
+  document.getElementById('btn-add-sheet-row').addEventListener('click', () => {
+    rawBooks.push(createEmptyBookRow(rawBooks.length + 1));
+    renderSheetGrid();
+    if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
+      analyzeBooks();
+    }
   });
 
-  document.getElementById('btn-add-sheet-row').addEventListener('click', () => {
-    const nextNum = rawBooks.length + 1;
-    rawBooks.push({
-      id: `EM${String(nextNum).padStart(5, '0')}`,
-      kdc: '813.6',
-      kdcMain: '8',
-      title: '',
-      author: '',
-      publisher: '',
-      pubYear: 2020,
-      loans: 0,
-      status: '정상',
-      isSpecial: false,
-      recommended: false,
-      checked: false,
-      reasons: [],
-      customNote: ''
-    });
-    renderSheetGrid();
-    analyzeBooks();
+  document.getElementById('btn-clear-sheet').addEventListener('click', () => {
+    initBlankSheet(5);
   });
 
   document.getElementById('btn-apply-sheet-analyze').addEventListener('click', () => {
+    if (!rawBooks.some(b => String(b.title || '').trim() !== '')) {
+      alert('판별할 도서명을 1권 이상 입력해 주십시오.');
+      return;
+    }
     analyzeBooks();
   });
 
   document.getElementById('btn-download-template').addEventListener('click', () => {
-    const csv = '\uFEFF등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태,특별도서\n' +
-      'EM00001,813.6,메밀꽃 필 무렵,이효석,문학과지성사,2012,0,정상,N\n' +
-      'EM00002,911,학교사료집,교사연구회,학교출판,1999,0,오훼손,Y\n';
+    const csv = '﻿등록번호,분류기호,도서명,저자,출판사,출판연도,대출횟수,상태,특별도서
+';
     triggerDownload(csv, '학교도서관_장서분석_표준양식.csv', 'text/csv;charset=utf-8;');
   });
 
@@ -526,7 +543,7 @@
       const title = String(r['도서명'] || r['서명'] || r['제목'] || '').trim();
       const author = String(r['저자'] || r['지은이'] || '').trim();
       const publisher = String(r['출판사'] || r['발행처'] || '').trim();
-      const kdc = String(r['분류기호'] || r['KDC'] || r['청구기호'] || '800').trim();
+      const kdc = String(r['분류기호'] || r['KDC'] || r['청구기호'] || '').trim();
       const status = String(r['상태'] || r['도서상태'] || '정상').trim();
       const isSpecial = parseSpecialFlag(r['특별도서'] ?? r['특별'] ?? r['보존구분'] ?? false);
 
@@ -552,7 +569,7 @@
       }
 
       valid.push({
-        _uid: `book_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`,
+        _uid: `book_${Date.now()}_${uidCounter++}`,
         id,
         kdc,
         kdcMain: kdc.charAt(0) || '0',
@@ -586,16 +603,16 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="row-num-cell">${idx + 1}</td>
-        <td><input type="text" class="excel-cell-input" data-field="id" data-uid="${b._uid}" value="${esc(b.id)}" /></td>
-        <td><input type="text" class="excel-cell-input" data-field="kdc" data-uid="${b._uid}" value="${esc(b.kdc)}" /></td>
+        <td><input type="text" class="excel-cell-input" data-field="id" data-uid="${b._uid}" value="${esc(b.id)}" placeholder="EM00001" /></td>
+        <td><input type="text" class="excel-cell-input" data-field="kdc" data-uid="${b._uid}" value="${esc(b.kdc)}" placeholder="813.6" /></td>
         <td><input type="text" class="excel-cell-input" data-field="title" data-uid="${b._uid}" value="${esc(b.title)}" placeholder="도서명 입력" /></td>
         <td><input type="text" class="excel-cell-input" data-field="author" data-uid="${b._uid}" value="${esc(b.author)}" placeholder="저자" /></td>
         <td><input type="text" class="excel-cell-input" data-field="publisher" data-uid="${b._uid}" value="${esc(b.publisher)}" placeholder="출판사" /></td>
         <td><input type="number" class="excel-cell-input" data-field="pubYear" data-uid="${b._uid}" value="${b.pubYear ?? ''}" placeholder="연도" /></td>
         <td><input type="number" class="excel-cell-input" data-field="loans" data-uid="${b._uid}" value="${b.loans}" min="0" /></td>
-        <td><input type="text" class="excel-cell-input" data-field="status" data-uid="${b._uid}" value="${esc(b.status)}" /></td>
+        <td><input type="text" class="excel-cell-input" data-field="status" data-uid="${b._uid}" value="${esc(b.status)}" placeholder="정상" /></td>
         <td style="text-align:center; padding: 4px 6px;">
-          <button type="button" class="special-chip-btn ${b.isSpecial ? 'is-special' : ''}" data-special-uid="${b._uid}">
+          <button type="button" class="special-chip-btn ${b.isSpecial ? 'is-special' : ''}" data-special-uid="${b._uid}" aria-pressed="${b.isSpecial}">
             ${b.isSpecial ? '★ 폐기 X (특별)' : '☆ 일반'}
           </button>
         </td>
@@ -605,51 +622,73 @@
       `;
       tbody.appendChild(tr);
     });
-
-    tbody.querySelectorAll('.excel-cell-input').forEach(inp => {
-      inp.addEventListener('change', e => {
-        const uid = e.target.dataset.uid;
-        const field = e.target.dataset.field;
-        const book = rawBooks.find(item => item._uid === uid);
-        if (!book) return;
-
-        if (field === 'pubYear') {
-          const val = parseInt(e.target.value, 10);
-          book.pubYear = isNaN(val) ? null : val;
-        } else if (field === 'loans') {
-          const val = Number(e.target.value);
-          book.loans = isNaN(val) || val < 0 ? 0 : val;
-          e.target.value = book.loans;
-        } else {
-          book[field] = e.target.value;
-          if (field === 'kdc') {
-            book.kdcMain = String(e.target.value || '0').trim().charAt(0) || '0';
-          }
-        }
-        analyzeBooks();
-      });
-    });
-
-    tbody.querySelectorAll('.special-chip-btn').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const uid = e.currentTarget.dataset.specialUid;
-        const book = rawBooks.find(item => item._uid === uid);
-        if (!book) return;
-        book.isSpecial = !book.isSpecial;
-        renderSheetGrid();
-        analyzeBooks();
-      });
-    });
-
-    tbody.querySelectorAll('button[data-del-uid]').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const uid = e.currentTarget.dataset.delUid;
-        rawBooks = rawBooks.filter(item => item._uid !== uid);
-        renderSheetGrid();
-        analyzeBooks();
-      });
-    });
   }
+
+  // 이벤트 위임으로 시트 셀 입력, 별표(특별도서) 토글, 행 삭제 처리
+  const sheetTbody = document.getElementById('sheet-grid-tbody');
+
+  sheetTbody.addEventListener('input', e => {
+    const inp = e.target.closest('.excel-cell-input');
+    if (!inp) return;
+    const uid = inp.dataset.uid;
+    const field = inp.dataset.field;
+    const book = rawBooks.find(item => item._uid === uid);
+    if (!book) return;
+
+    if (field === 'pubYear') {
+      const val = parseInt(inp.value, 10);
+      book.pubYear = isNaN(val) ? null : val;
+    } else if (field === 'loans') {
+      const val = Number(inp.value);
+      book.loans = isNaN(val) || val < 0 ? 0 : val;
+    } else {
+      book[field] = inp.value;
+      if (field === 'kdc') {
+        book.kdcMain = String(inp.value || '0').trim().charAt(0) || '0';
+      }
+    }
+  });
+
+  sheetTbody.addEventListener('change', e => {
+    const inp = e.target.closest('.excel-cell-input');
+    if (!inp) return;
+    if (inp.dataset.field === 'loans') {
+      const book = rawBooks.find(item => item._uid === inp.dataset.uid);
+      if (book) inp.value = book.loans;
+    }
+    if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
+      analyzeBooks();
+    }
+  });
+
+  sheetTbody.addEventListener('click', e => {
+    const specialBtn = e.target.closest('[data-special-uid]');
+    if (specialBtn) {
+      e.preventDefault();
+      const uid = specialBtn.dataset.specialUid;
+      const book = rawBooks.find(item => item._uid === uid);
+      if (!book) return;
+      book.isSpecial = !book.isSpecial;
+      renderSheetGrid();
+      if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
+        analyzeBooks();
+      }
+      return;
+    }
+
+    const delBtn = e.target.closest('[data-del-uid]');
+    if (delBtn) {
+      e.preventDefault();
+      const uid = delBtn.dataset.delUid;
+      rawBooks = rawBooks.filter(item => item._uid !== uid);
+      renderSheetGrid();
+      if (rawBooks.some(b => String(b.title || '').trim() !== '')) {
+        analyzeBooks();
+      } else {
+        document.getElementById('result-section').style.display = 'none';
+      }
+    }
+  });
 
   function showValidation(list, isWarn, title) {
     const box = document.getElementById('validation-box');
@@ -668,8 +707,8 @@
   }
 
   document.getElementById('btn-reanalyze').addEventListener('click', () => {
-    if (!rawBooks.length) {
-      alert('먼저 장서 데이터를 입력하거나 샘플 데이터를 불러오십시오.');
+    if (!rawBooks.some(b => String(b.title || '').trim() !== '')) {
+      alert('먼저 시트에 도서 데이터를 입력하거나 파일을 업로드해 주십시오.');
       return;
     }
     analyzeBooks();
@@ -688,6 +727,10 @@
     const protectRef = document.getElementById('crit-protect-ref').checked;
 
     const validRows = rawBooks.filter(b => String(b.title || '').trim() !== '');
+    if (!validRows.length) {
+      document.getElementById('result-section').style.display = 'none';
+      return;
+    }
 
     const copyMap = {};
     validRows.forEach(b => {
@@ -698,17 +741,19 @@
     const prevNotes = new Map(analyzedBooks.map(item => [item._uid, item.customNote]));
 
     analyzedBooks = validRows.map(b => {
-      const kdcMain = String(b.kdc || '0').trim().charAt(0) || '0';
+      const kdcStr = String(b.kdc || '').trim();
+      const kdcMain = kdcStr ? kdcStr.charAt(0) : '0';
       const authorClean = String(b.author || '').trim() || '저자미상';
       const pubClean = String(b.publisher || '').trim() || '출판사미상';
       const statusClean = String(b.status || '정상').trim();
       const reasons = [];
-      const isRef = kdcMain === '0';
+      const isRef = kdcStr !== '' && kdcMain === '0';
       const isDamaged = /오훼손|훼손|파손|분실|오손/.test(statusClean);
 
       if (b.isSpecial) {
         return {
           ...b,
+          kdc: kdcStr || '미기재',
           kdcMain,
           author: authorClean,
           publisher: pubClean,
@@ -723,6 +768,7 @@
       if (protectRef && isRef && !isDamaged) {
         return {
           ...b,
+          kdc: kdcStr,
           kdcMain,
           author: authorClean,
           publisher: pubClean,
@@ -756,6 +802,7 @@
       const rec = reasons.length > 0;
       return {
         ...b,
+        kdc: kdcStr || '미기재',
         kdcMain,
         author: authorClean,
         publisher: pubClean,
@@ -879,7 +926,7 @@
         <td>
           <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
             <div>${pills}</div>
-            <button type="button" class="special-chip-btn ${b.isSpecial ? 'is-special' : ''}" data-res-special-uid="${b._uid}">
+            <button type="button" class="special-chip-btn ${b.isSpecial ? 'is-special' : ''}" data-res-special-uid="${b._uid}" aria-pressed="${b.isSpecial}">
               ${b.isSpecial ? '★ 특별도서(폐기 X)' : '☆ 특별도서 지정'}
             </button>
           </div>
@@ -888,34 +935,41 @@
       `;
       tbody.appendChild(tr);
     });
-
-    tbody.querySelectorAll('.row-chk').forEach(chk => {
-      chk.addEventListener('change', e => {
-        const target = analyzedBooks.find(item => item._uid === e.target.dataset.uid);
-        if (target) {
-          target.checked = e.target.checked;
-          refreshKpis();
-        }
-      });
-    });
-
-    tbody.querySelectorAll('button[data-res-special-uid]').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const uid = e.currentTarget.dataset.resSpecialUid;
-        const rawItem = rawBooks.find(item => item._uid === uid);
-        if (rawItem) rawItem.isSpecial = !rawItem.isSpecial;
-        renderSheetGrid();
-        analyzeBooks();
-      });
-    });
-
-    tbody.querySelectorAll('.inline-reason-input').forEach(inp => {
-      inp.addEventListener('input', e => {
-        const target = analyzedBooks.find(item => item._uid === e.target.dataset.noteUid);
-        if (target) target.customNote = e.target.value;
-      });
-    });
   }
+
+  // 판별 결과 테이블 이벤트 위임
+  const resultTbody = document.getElementById('weeding-tbody');
+
+  resultTbody.addEventListener('change', e => {
+    const chk = e.target.closest('.row-chk');
+    if (chk) {
+      const target = analyzedBooks.find(item => item._uid === chk.dataset.uid);
+      if (target) {
+        target.checked = chk.checked;
+        refreshKpis();
+      }
+    }
+  });
+
+  resultTbody.addEventListener('click', e => {
+    const btn = e.target.closest('[data-res-special-uid]');
+    if (!btn) return;
+    e.preventDefault();
+    const uid = btn.dataset.resSpecialUid;
+    const rawItem = rawBooks.find(item => item._uid === uid);
+    if (rawItem) {
+      rawItem.isSpecial = !rawItem.isSpecial;
+      renderSheetGrid();
+      analyzeBooks();
+    }
+  });
+
+  resultTbody.addEventListener('input', e => {
+    const inp = e.target.closest('.inline-reason-input');
+    if (!inp) return;
+    const target = analyzedBooks.find(item => item._uid === inp.dataset.noteUid);
+    if (target) target.customNote = inp.value;
+  });
 
   ['filter-kdc', 'filter-mode'].forEach(id => document.getElementById(id).addEventListener('change', renderTable));
   document.getElementById('filter-search').addEventListener('input', renderTable);
@@ -964,7 +1018,8 @@
     const rows = buildWeedingReportRows(selected);
     const headers = Object.keys(rows[0]);
     const csvLines = rows.map(r => headers.map(h => `"${String(r[h]).replace(/"/g, '""')}"`).join(','));
-    const csv = '\uFEFF' + [headers.join(','), ...csvLines].join('\n');
+    const csv = '﻿' + [headers.join(','), ...csvLines].join('
+');
     const dateStr = new Date().toISOString().slice(0, 10);
     triggerDownload(csv, `학교도서관_장서제적_사유서_${dateStr}.csv`, 'text/csv;charset=utf-8;');
   });
@@ -1016,7 +1071,8 @@
       .replace(/"/g, '&quot;');
   }
 
-  processRawRows(getSampleData().slice(0, 5), '직접입력_시트');
+  // 초기 진입 시 미리 입력된 데이터 없이 빈 입력 시트 5행으로 시작
+  initBlankSheet(5);
 </script>
 
 </body>
