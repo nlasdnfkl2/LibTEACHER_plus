@@ -291,3 +291,273 @@ body.is-clicking .custom-cursor-ring {
     display: none !important;
   }
 }
+
+
+/* 테마 맞춤형 셀렉트 / 목록 스타일 (기본 브라우저 화살표 제거 및 네오-브루탈리즘 적용) */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: var(--bg-subtle);
+  color: var(--black);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  border-radius: 0;
+  padding: 11px 40px 11px 14px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--black) 50%),
+    linear-gradient(135deg, var(--black) 50%, transparent 50%),
+    linear-gradient(to left, var(--yellow), var(--yellow));
+  background-position:
+    calc(100% - 19px) calc(50% - 2px),
+    calc(100% - 13px) calc(50% - 2px),
+    100% 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    30px 100%;
+  background-repeat: no-repeat;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.12s ease;
+}
+
+select:hover {
+  background-color: #ffffff;
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-md);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--black) 50%),
+    linear-gradient(135deg, var(--black) 50%, transparent 50%),
+    linear-gradient(to left, var(--cyan), var(--cyan));
+  background-position:
+    calc(100% - 19px) calc(50% - 2px),
+    calc(100% - 13px) calc(50% - 2px),
+    100% 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    30px 100%;
+  background-repeat: no-repeat;
+}
+
+select:focus,
+select:active {
+  outline: none;
+  background-color: #ffffff;
+  box-shadow: var(--shadow-md);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--black) 50%),
+    linear-gradient(135deg, var(--black) 50%, transparent 50%),
+    linear-gradient(to left, var(--green), var(--green));
+  background-position:
+    calc(100% - 19px) calc(50% - 2px),
+    calc(100% - 13px) calc(50% - 2px),
+    100% 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    30px 100%;
+  background-repeat: no-repeat;
+}
+
+select.btn-sm,
+.filter-inputs select {
+  padding: 7px 34px 7px 12px;
+  font-size: 0.84rem;
+  background-size:
+    5px 5px,
+    5px 5px,
+    26px 100%;
+  background-position:
+    calc(100% - 16px) calc(50% - 2px),
+    calc(100% - 11px) calc(50% - 2px),
+    100% 0;
+}
+
+select.btn-sm:hover,
+.filter-inputs select:hover,
+select.btn-sm:focus,
+.filter-inputs select:focus {
+  background-size:
+    5px 5px,
+    5px 5px,
+    26px 100%;
+  background-position:
+    calc(100% - 16px) calc(50% - 2px),
+    calc(100% - 11px) calc(50% - 2px),
+    100% 0;
+}
+
+select option {
+  background-color: #ffffff;
+  color: var(--black);
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
+select option:checked,
+select option:hover {
+  background-color: var(--yellow);
+  color: var(--black);
+}
+
+/* 커스텀 드롭다운 팝업 목록 (클릭 시 펼쳐지는 테마 목록) */
+.lib-select-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.lib-select-wrap.is-inline {
+  display: inline-block;
+  width: auto;
+}
+
+.lib-select-native-hidden {
+  position: absolute !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 1px !important;
+  height: 1px !important;
+}
+
+.lib-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--bg-subtle);
+  color: var(--black);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.12s ease;
+}
+
+.lib-select-wrap.is-inline .lib-select-trigger {
+  width: auto;
+  padding: 7px 12px;
+  font-size: 0.84rem;
+}
+
+.lib-select-trigger:hover {
+  background: #ffffff;
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-md);
+}
+
+.lib-select-wrap.is-open .lib-select-trigger {
+  background: var(--yellow);
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-md);
+}
+
+.lib-select-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background: var(--yellow);
+  border: 2px solid var(--black);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.12s ease;
+}
+
+.lib-select-wrap.is-inline .lib-select-arrow {
+  min-width: 20px;
+  height: 20px;
+  font-size: 0.68rem;
+}
+
+.lib-select-trigger:hover .lib-select-arrow {
+  background: var(--cyan);
+}
+
+.lib-select-wrap.is-open .lib-select-arrow {
+  transform: rotate(180deg);
+  background: var(--green);
+}
+
+.lib-select-menu {
+  position: fixed;
+  z-index: 9600;
+  min-width: 180px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: var(--border-thick);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  display: none;
+  animation: libMenuPop 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lib-select-menu.is-open {
+  display: block;
+}
+
+@keyframes libMenuPop {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.lib-select-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  background: #ffffff;
+  color: var(--black);
+  border: 2px solid transparent;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.1s ease, transform 0.1s ease, border-color 0.1s ease;
+}
+
+.lib-select-option + .lib-select-option {
+  margin-top: 4px;
+}
+
+.lib-select-option:hover,
+.lib-select-option:focus-visible {
+  outline: none;
+  background: var(--cyan);
+  border-color: var(--black);
+  box-shadow: var(--shadow-sm);
+  transform: translate(-1px, -1px);
+}
+
+.lib-select-option.is-selected {
+  background: var(--yellow);
+  border-color: var(--black);
+  box-shadow: var(--shadow-sm);
+}
+
+.lib-select-check {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
