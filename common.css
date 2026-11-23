@@ -561,3 +561,82 @@ select option:hover {
   font-size: 0.82rem;
   font-weight: 900;
 }
+
+
+/* 사이트 내 네오-브루탈리즘 알림 토스트 (기본 브라우저 alert 대체) */
+.lib-toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9800;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.lib-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  background: var(--yellow);
+  color: var(--black);
+  border: var(--border-thick);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.45;
+  animation: libToastIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lib-toast.is-warn {
+  background: var(--pink);
+  color: #ffffff;
+}
+
+.lib-toast.is-info {
+  background: var(--cyan);
+  color: var(--black);
+}
+
+.lib-toast.is-success {
+  background: var(--green);
+  color: var(--black);
+}
+
+.lib-toast-close {
+  flex-shrink: 0;
+  background: #ffffff;
+  color: var(--black);
+  border: 2px solid var(--black);
+  box-shadow: var(--shadow-sm);
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.85rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.lib-toast-close:hover {
+  background: var(--black);
+  color: #ffffff;
+}
+
+@keyframes libToastIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

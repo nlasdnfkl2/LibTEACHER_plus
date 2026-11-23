@@ -873,20 +873,20 @@
 
   document.getElementById('btn-copy-cite').addEventListener('click', () => {
     const out = formatCitation();
-    if (!out) return alert('복사할 출처 문장이 없습니다.');
+    if (!out) return showLibNotice('복사할 출처 문장이 없습니다.');
     navigator.clipboard.writeText(out).then(() => notifyCite('클립보드에 참고문헌이 복사되었습니다.'));
   });
 
   document.getElementById('btn-copy-intext').addEventListener('click', () => {
     const intext = formatIntextCitation();
-    if (!intext) return alert('복사할 본문 내 인용이 없습니다.');
+    if (!intext) return showLibNotice('복사할 본문 내 인용이 없습니다.');
     navigator.clipboard.writeText(intext).then(() => notifyCite(`본문 내 인용 "${intext}"을(를) 복사했습니다.`));
   });
 
   document.getElementById('btn-add-bib').addEventListener('click', () => {
     const out = formatCitation();
-    if (!out) return alert('추가할 출처 정보를 먼저 입력하십시오.');
-    if (bibItems.includes(out)) return alert('이미 목록에 추가된 참고문헌입니다.');
+    if (!out) return showLibNotice('추가할 출처 정보를 먼저 입력하십시오.');
+    if (bibItems.includes(out)) return showLibNotice('이미 목록에 추가된 참고문헌입니다.');
     bibItems.push(out);
     saveBib();
     renderBibList();

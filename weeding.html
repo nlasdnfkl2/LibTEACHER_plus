@@ -122,7 +122,7 @@
       background: var(--yellow) !important; outline: 2px solid var(--black) !important; outline-offset: -2px;
     }
     .special-chip-btn {
-      display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border: 2px solid var(--black);
+      display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border: 2px solid var(--black); white-space: nowrap;
       background: var(--bg-subtle); color: var(--black); font-size: 0.76rem; font-weight: 900; cursor: pointer;
       box-shadow: var(--shadow-sm); user-select: none;
     }
@@ -235,7 +235,7 @@
 
     <div class="excel-sheet-toolbar">
       <div style="font-size:0.86rem; font-weight:900;">
-        📊 커스텀 장서 시트 — 셀을 클릭해 바로 입력하세요. <span class="tag-pill special">★ 폐기 X</span> 클릭 시 폐기 대상에서 제외됩니다.
+        📊 커스텀 장서 시트 — 셀을 클릭해 바로 입력하세요. <span class="tag-pill special">★ 특별도서(폐기 X)</span> 클릭 시 폐기 대상에서 제외됩니다.
       </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-sky btn-sm" id="btn-apply-sheet-analyze">시트 내용으로 재판별</button>
@@ -255,7 +255,7 @@
             <th>출판연도</th>
             <th>대출횟수</th>
             <th>상태</th>
-            <th>특별도서</th>
+            <th>특별도서(폐기 X)</th>
             <th style="width:56px;">삭제</th>
           </tr>
         </thead>
@@ -306,7 +306,7 @@
         </label>
       </div>
       <div>
-        <label class="field-label" for="crit-total-books">학교 전체 보유 장서 수 (법정 7% 계산용)</label>
+        <label class="field-label" for="crit-total-books">학교 전체 보유 장서 수 (법정 7% 계산 모수)</label>
         <input type="number" id="crit-total-books" placeholder="비워두면 시트 권수를 기준으로 계산" min="1" />
       </div>
     </div>
@@ -373,9 +373,9 @@
         </select>
 
         <select id="filter-mode" style="width: auto;">
-          <option value="REC">폐기 추천 도서만 보기</option>
-          <option value="SPECIAL">특별 도서(폐기 X) 보기</option>
-          <option value="ALL">전체 도서 보기</option>
+          <option value="REC">폐기 추천 도서만</option>
+          <option value="SPECIAL">특별 도서(폐기 X)</option>
+          <option value="ALL">전체 도서</option>
         </select>
 
         <input type="text" id="filter-search" placeholder="도서명 또는 저자 검색..." style="width: 210px;" />
@@ -768,7 +768,7 @@
           <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
             <div>${pills}</div>
             <button type="button" class="special-chip-btn ${b.isSpecial ? 'is-special' : ''}" data-res-special-uid="${b._uid}" aria-pressed="${b.isSpecial}">
-              ${b.isSpecial ? '★ 특별도서(폐기 X)' : '☆ 특별도서 지정'}
+              ${b.isSpecial ? '★ 폐기 X' : '☆ 특별도서 지정'}
             </button>
           </div>
           <input type="text" class="inline-reason-input" data-note-uid="${b._uid}" value="${esc(b.customNote)}" placeholder="사유서 보충 메모(선택)..." />
@@ -853,7 +853,7 @@
 
     function parseUploadedFile(file) {
       if (typeof XLSX === 'undefined') {
-        alert('엑셀/CSV 파서 라이브러리(XLSX)를 불러오지 못했습니다. 네트워크 연결을 확인해 주십시오.');
+        showLibNotice('엑셀/CSV 파서 라이브러리(XLSX)를 불러오지 못했습니다. 네트워크 연결을 확인해 주십시오.');
         return;
       }
       const reader = new FileReader();
@@ -888,7 +888,7 @@
 
     document.getElementById('btn-apply-sheet-analyze').addEventListener('click', () => {
       if (!rawBooks.some(b => String(b.title || '').trim() !== '')) {
-        alert('판별할 도서명을 1권 이상 입력해 주십시오.');
+        showLibNotice('판별할 도서명을 1권 이상 입력해 주십시오.');
         return;
       }
       analyzeBooks();
@@ -901,7 +901,7 @@
 
     document.getElementById('btn-reanalyze').addEventListener('click', () => {
       if (!rawBooks.some(b => String(b.title || '').trim() !== '')) {
-        alert('먼저 시트에 도서 데이터를 입력하거나 파일을 업로드해 주십시오.');
+        showLibNotice('먼저 시트에 도서 데이터를 입력하거나 파일을 업로드해 주십시오.');
         return;
       }
       analyzeBooks();
@@ -1052,7 +1052,7 @@
 
     document.getElementById('btn-export-csv').addEventListener('click', () => {
       const selected = analyzedBooks.filter(b => b.checked);
-      if (!selected.length) return alert('사유서로 출력할 도서를 1권 이상 선택하십시오.');
+      if (!selected.length) return showLibNotice('사유서로 출력할 도서를 1권 이상 선택하십시오.');
       const rows = buildWeedingReportRows(selected);
       const headers = Object.keys(rows[0]);
       const csvLines = rows.map(r => headers.map(h => `"${String(r[h]).replace(/"/g, '""')}"`).join(','));
@@ -1063,7 +1063,7 @@
 
     document.getElementById('btn-export-xlsx').addEventListener('click', () => {
       const selected = analyzedBooks.filter(b => b.checked);
-      if (!selected.length) return alert('사유서로 출력할 도서를 1권 이상 선택하십시오.');
+      if (!selected.length) return showLibNotice('사유서로 출력할 도서를 1권 이상 선택하십시오.');
       const totalBase = getTotalBaseCount();
       const rate = totalBase > 0 ? ((selected.length / totalBase) * 100).toFixed(1) : '0.0';
       const baseYear = parseInt(document.getElementById('crit-year').value, 10) || 2026;

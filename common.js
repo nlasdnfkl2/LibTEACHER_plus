@@ -256,7 +256,58 @@
     }
   }, { passive: true });
 
-  window.addEventListener('scroll', () => {
-    if (activeMenu) closeActiveMenu();
+  window.addEventListener('scroll', (e) => {
+    if (!activeMenu) return;
+    if (e.target && (e.target === activeMenu || activeMenu.contains(e.target))) {
+      return;
+    }
+    closeActiveMenu();
   }, { passive: true, capture: true });
+})();
+
+
+/* 사이트 내 네오-브루탈리즘 알림 토스트 유틸리티 */
+(function initLibNotice() {
+  if (window.showLibNotice) return;
+
+  function getContainer() {
+    let container = document.querySelector('.lib-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'lib-toast-container';
+      container.setAttribute('aria-live', 'polite');
+      container.setAttribute('aria-atomic', 'true');
+      document.body.appendChild(container);
+    }
+    return container;
+  }
+
+  window.showLibNotice = function showLibNotice(message, type = 'warn', duration = 3400) {
+    const container = getContainer();
+    const toast = document.createElement('div');
+    toast.className = 'lib-toast' + (type ? ` is-${type}` : '');
+    toast.setAttribute('role', 'status');
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = String(message || '');
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'lib-toast-close';
+    closeBtn.setAttribute('aria-label', '알림 닫기');
+    closeBtn.textContent = '×';
+
+    function removeToast() {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }
+
+    closeBtn.addEventListener('click', removeToast);
+    toast.appendChild(textSpan);
+    toast.appendChild(closeBtn);
+    container.appendChild(toast);
+
+    if (duration > 0) {
+      setTimeout(removeToast, duration);
+    }
+  };
 })();
